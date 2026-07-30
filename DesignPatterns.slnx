@@ -1,1 +1,3 @@
-<Solution />
+<Solution>
+  <Project Path="Creational.Patterns.Builder/Creational.Patterns.Builder.csproj" />
+</Solution>
