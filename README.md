@@ -368,11 +368,35 @@ sb.Append("Yılmaz");
 
 Console.WriteLine(sb.ToString());
 ```
-
+__________________________________________
 ```diff
-@@  @@
+@@ Avantajları @@
+✅ Constructor karmaşasını kaldırır.
+✅ Okunabilirliği artırır.
+✅ Fluent API sağlar.
+✅ Immutable class'larda çok kullanılır.
+✅ Validation eklenebilir.
+```
+__________________________________________
+```diff
+@@ Dezavantajları @@
+❌ Küçük sınıflar için gereksiz olabilir.
+❌ Her model için ekstra Builder sınıfı yazılır.
+❌ Çok basit nesnelerde new kullanmak daha pratiktir.
 ```
 
-```c#
+```diff
+@@ Builder ile Factory arasındaki fark @@
+@@ Builder: @@
+> "Nesneyi nasıl oluşturacağım?" (Adım adım oluşturma)
+@@ Factory: @@
+> "Hangi nesneyi oluşturacağım?" (Doğru sınıfı seçme)
 
+CreditCardFactory → Visa mı MasterCard mı dönecek?
+JournalBuilder → Journal nesnesinin alanlarını tek tek dolduracak.
+```
+
+```diff
+@@ Soru: return this neden kullanılır? @@
+> Cevap: Fluent API (method chaining) sağlamak için. Böylece ardışık metot çağrıları yapılabilir ve kod daha okunabilir olur.
 ```
