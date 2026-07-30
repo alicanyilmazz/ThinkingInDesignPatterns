@@ -11,7 +11,7 @@ Elimizde bir **User** sınıfı olsun.
 
 ```
 
-```
+```c#
 public class User
 {
     public string Name { get; set; }
