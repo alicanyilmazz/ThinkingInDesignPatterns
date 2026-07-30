@@ -25,6 +25,31 @@ public class User
 }
 ```
 
+```diff
+@@ Şimdi bunu oluşturuyoruz. @@
+```
+ 
+```c#
+var user = new User
+{
+    Name = "Ali",
+    Surname = "Yılmaz",
+    Age = 28,
+    Email = "ali@test.com",
+    Phone = "5551112233",
+    Address = "İstanbul",
+    IsAdmin = false,
+    IsActive = true
+};
+```
+
+```diff
+@@ Şimdilik sorun yok. @@
+```
+
+```diff
++ Peki ya constructor kullanırsak?
+```
 
 
 ```diff
