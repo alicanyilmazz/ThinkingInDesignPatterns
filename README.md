@@ -48,7 +48,37 @@ var user = new User
 ```
 
 ```diff
-+ Peki ya constructor kullanırsak?
+@@ Peki ya constructor kullanırsak? @@
+```
+
+```c#
+public User(
+    string name,
+    string surname,
+    int age,
+    string email,
+    string phone,
+    string address,
+    bool isAdmin,
+    bool isActive)
+{
+}
+```
+
+```diff
+@@ Kullanımı @@
+```
+
+```c#
+var user = new User(
+    "Ali",
+    "Yılmaz",
+    28,
+    "ali@test.com",
+    "5551112233",
+    "İstanbul",
+    false,
+    true);
 ```
 
 
