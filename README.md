@@ -92,6 +92,16 @@ true
 ```
 
 ```diff
+@@
+
+hangisi Active?
+
+hangisi Admin?
+
+Belli değil. @@
+```
+
+```diff
 @@  @@
 ```
 
