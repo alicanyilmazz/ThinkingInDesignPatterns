@@ -81,9 +81,20 @@ var user = new User(
     true);
 ```
 
+```diff
+@@ Burada ilk problem geliyor. @@
+@@ Şuna bakınca @@
+```
+
+```c#
+false,
+true
+```
 
 ```diff
-- This is a red colored line
-+ This is a green colored line
-@@ This is a purple colored line @@
+@@  @@
+```
+
+```c#
+
 ```
