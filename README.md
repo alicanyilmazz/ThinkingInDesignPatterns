@@ -228,6 +228,148 @@ builder.WithName("Ali");
 ```
 
 ```diff
+> @@ Build() @@
+@@ Her Builder'ın sonunda vardır. @@
+@@ Görevi oluşturulan nesneyi teslim etmektir.@@
+```
+
+```c#
+public User Build()
+{
+    return _user;
+}
+```
+__________________________________________
+
+```diff
+@@ Validation da yapılabilir @@
+@@ Mesela Email zorunlu olsun. @@
+```
+
+```c#
+public User Build()
+{
+    if(string.IsNullOrWhiteSpace(_user.Email))
+        throw new Exception("Email boş.");
+
+    return _user;
+}
+```
+
+```diff
+@@ Artık @@
+```
+```c#
+new UserBuilder()
+    .WithName("Ali")
+    .Build();
+```
+```diff
+@@ çalışmaz. @@
+```
+__________________________________________
+
+```diff
+@@ Immutable class oluşturmak için de kullanılır @@
+@@ Mesela @@
+```
+```c#
+public class User
+{
+    public string Name { get; }
+
+    public string Email { get; }
+
+    public User(
+        string name,
+        string email)
+    {
+        Name=name;
+
+        Email=email;
+    }
+}
+```
+
+```diff
+@@ Setter yok. @@
+@@ Ama Builder yine oluşturabilir. @@
+```
+__________________________________________
+
+```diff
+@@ Builder nerelerde kullanılır? @@
+@@ ASP.NET Core @@
+@@ En büyük örnek @@
+```
+```c#
+var builder = WebApplication.CreateBuilder(args);
+```
+```diff
+@@ sonra @@
+```
+
+```c#
+builder.Services.AddControllers();
+
+builder.Services.AddSwagger();
+
+builder.Configuration.AddJsonFile(...);
+
+builder.Logging.AddConsole();
+```
+```diff
+@@ En sonunda @@
+```
+
+```c#
+var app = builder.Build();
+```
+
+```diff
+@@ ConfigurationBuilder @@
+```
+
+```diff
+@@ ConfigurationBuilder @@
+```
+
+```c#
+new ConfigurationBuilder()
+.AddJsonFile(...)
+.AddEnvironmentVariables()
+.AddUserSecrets()
+.Build();
+```
+
+```diff
+@@ HostBuilder @@
+```
+
+```c#
+Host.CreateDefaultBuilder()
+.ConfigureServices(...)
+.ConfigureLogging(...)
+.Build();
+```
+
+```diff
+@@ StringBuilder @@
+```
+
+```c#
+var sb = new StringBuilder();
+
+sb.Append("Ali");
+
+sb.Append(" ");
+
+sb.Append("Yılmaz");
+
+Console.WriteLine(sb.ToString());
+```
+
+```diff
 @@  @@
 ```
 
