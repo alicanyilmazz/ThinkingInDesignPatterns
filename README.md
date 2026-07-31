@@ -68,9 +68,72 @@ paymentService.Pay(100);
 
 -Şimdi ne yapacağız?
 ```
+___________________________________
+```diff
+- Kötü çözüm
+- Her şeyi PaymentService'in içine koymak.
+```
+```c#
+public class PaymentService
+{
+    public void Pay(decimal amount)
+    {
+        Log();
+
+        Validate();
+
+        Retry();
+
+        Performance();
+
+        Cache();
+
+        Payment();
+
+        Log();
+    }
+}
+```
+```diff
+@@ Bu artık @@
+❌ Single Responsibility Principle'yi bozuyor.
+
+Çünkü PaymentService artık
+* ödeme yapıyor
+* log atıyor
+* cache yönetiyor
+* retry yapıyor
+* authorization yapıyor
+```
+___________________________________
+```diff
+@@ Decorator ne diyor? @@
++ Asıl sınıfa dokunma.
++ Üzerine yeni davranış ekle.
++ Yani
+```
+
+```c#
+Logging
+      ↓
+Caching
+      ↓
+Authorization
+      ↓
+PaymentService
+```
+
+```diff
+@@ Katman katman. @@
+```
+__________________________________________
 
 ```diff
 @@  @@
+```
+
+```c#
+
 ```
 
 ```diff
@@ -80,7 +143,8 @@ paymentService.Pay(100);
 ```c#
 
 ```
-__________________________________________
+
+
 ```diff
 @@ Avantajları @@
 ✅ Constructor karmaşasını kaldırır.
