@@ -6,10 +6,6 @@ Factory Method
 
 Genellikle tek ürün ailesinden bir nesne oluşturur:
 ```
-
-```c#
-
-```
 ```diff
 Abstract Factory
 
