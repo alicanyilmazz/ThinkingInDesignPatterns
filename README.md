@@ -117,7 +117,7 @@ __________________________________________
 
 ```diff
 @@ Context sınıfı @@
-@@ Strategy Pattern’de algoritmayı kullanan sınıfa genellikle Context denir. @@
+=> @@ Strategy Pattern’de algoritmayı kullanan sınıfa genellikle "Context" denir. @@
 @@ Bizim örneğimizde bu sınıf CommissionCalculator: @@
 ```
 ```c#
@@ -125,8 +125,7 @@ public sealed class CommissionCalculator
 {
     private readonly ICommissionStrategy _commissionStrategy;
 
-    public CommissionCalculator(
-        ICommissionStrategy commissionStrategy)
+    public CommissionCalculator(ICommissionStrategy commissionStrategy)
     {
         _commissionStrategy = commissionStrategy;
     }
@@ -135,9 +134,7 @@ public sealed class CommissionCalculator
     {
         if (amount <= 0)
         {
-            throw new ArgumentOutOfRangeException(
-                nameof(amount),
-                "Tutar sıfırdan büyük olmalıdır.");
+            throw new ArgumentOutOfRangeException(nameof(amount),"Tutar sıfırdan büyük olmalıdır.");
         }
 
         return _commissionStrategy.Calculate(amount);
@@ -147,23 +144,61 @@ public sealed class CommissionCalculator
 ```diff
 @@ Buradaki önemli nokta: @@
 ```
-
 ```c#
 private readonly ICommissionStrategy _commissionStrategy;
 ```
-__________________________________________
 ```diff
-@@ Avantajları @@
-✅ Constructor karmaşasını kaldırır.
-✅ Okunabilirliği artırır.
-✅ Fluent API sağlar.
-✅ Immutable class'larda çok kullanılır.
-✅ Validation eklenebilir.
+- CommissionCalculator, Visa veya MasterCard sınıfını doğrudan bilmiyor.
+
+- Sadece şu interface’i biliyor:
 ```
-__________________________________________
+```c#
+ICommissionStrategy
+```
+
 ```diff
-@@ Dezavantajları @@
-❌ Küçük sınıflar için gereksiz olabilir.
-❌ Her model için ekstra Builder sınıfı yazılır.
-❌ Çok basit nesnelerde new kullanmak daha pratiktir.
+@@ Ve hesaplama yaparken: @@
 ```
+```c#
+_commissionStrategy.Calculate(amount);
+```
+
+```diff
+@@ diyor. Hesabın nasıl yapıldığını bilmiyor. O işi kendisine verilen strategy yapıyor. @@
+```
+```diff
+@@ Kullanımı @@
+@@ @@ Kullanımı @@ @@
+```
+
+```c#
+ICommissionStrategy strategy = new VisaCommissionStrategy();
+
+var calculator = new CommissionCalculator(strategy);
+
+decimal commission = calculator.Calculate(1000);
+
+Console.WriteLine(commission); // 20
+```
+```diff
+@@ Akış: @@
+```
+```
+CommissionCalculator.Calculate(1000)
+                ↓
+VisaCommissionStrategy.Calculate(1000)
+                ↓
+               20
+```
+```diff
+@@ MasterCard için @@
+```
+
+```c#
+ICommissionStrategy strategy = new MasterCardCommissionStrategy();
+
+var calculator = new CommissionCalculator(strategy);
+
+decimal commission = calculator.Calculate(1000);
+
+Console.WriteLine(commission); // 30```
