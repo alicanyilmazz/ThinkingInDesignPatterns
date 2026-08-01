@@ -323,14 +323,173 @@ private readonly IPaymentService _paymentService;
 ```
 __________________________________________
 ```diff
+@@ Gerçek .NET örneği @@
++ Mesela
+```
+
+```c#
+IRepository
+```
+```diff
++ Asıl repository
+```
+```c#
+SqlRepository
+```
+```diff
+@@ Cache eklemek istiyorsun. @@
+```
+```c#
+CachingRepositoryDecorator
+```
+```diff
+@@ yazarsın @@
+```
+```
+GetById()
+↓
+Cache var mı?
+↓
+Varsa dön.
+↓
+Yoksa
+↓
+Repository.GetById()
+↓
+Cache'e yaz
+↓
+Dön.
+```
+```diff
+@@ Repository değişmedi. @@
+```
+__________________________________________
+```diff
+@@ Bankacılık örneği @@
+```
+
+```c#
+ATM'de Withdraw() metodu var.
+Her para çekmede
+Fraud Check
+↓
+AML Check
+↓
+Logging
+↓
+Performance
+↓
+Withdraw
+```
+```diff
+@@ Hepsi decorator olabilir. @@
+```
+__________________________________________
+
+```diff
+@@ ASP.NET Core'da nerede var? @@
+@@ Mesela  @@
+@@ MediatR @@
+@@ Pipeline Behavior @@
+```
+```
+Validation
+↓
+Logging
+↓
+Transaction
+↓
+Handler
+```
+```diff
+@@ Decorator mantığıyla çalışır. @@
+```
+```diff
+@@ Scrutor @@
+```
+```c#
+services.Decorate<IOrderService,
+                 LoggingOrderService>();
+```
+```diff
+@@Bu da gerçek Decorator'dır.@@
+```
+__________________________________________
+```diff
+@@ Avantajları @@
+✅ Open Closed Principle
+✅ Yeni özellik eklemek için mevcut kod değişmez.
+✅ Single Responsibility korunur.
+✅ İstenildiği kadar davranış eklenebilir.
+✅ Runtime'da eklenebilir.
+```
+__________________________________________
+```diff
+@@ Dezavantajları @@
+❌ Çok fazla decorator olursa debug etmek zorlaşabilir.
+```
+__________________________________________
+
+```diff
+@@ Decorator vs Inheritance @@
+- Kötü çözüm
+```
+
+```
+PaymentService
+↓
+LoggingPaymentService
+↓
+CachingLoggingPaymentService
+↓
+AuthorizationCachingLoggingPaymentService
+```
+```diff
+@@ Patlar. @@
+@@ Class sayısı inanılmaz artar. @@
+@@ Decorator bunu çözer. @@
+```
+__________________________________________
+
+```diff
+@@ Decorator vs Proxy @@
+@@ En çok sorulan soru. @@
+
+- Decorator
+> - Davranış ekler.
+Örneğin:
+* Log
+* Cache
+* Retry
+* Validation
+
+- Proxy
+> - Aynı davranışı korur ama erişimi kontrol eder.
+Örneğin
+* Remote Proxy
+* Lazy Proxy
+* Security Proxy 
+```
+```diff
+@@ Decorator neden inheritance yerine composition kullanır? @@
+@@ Çünkü davranışları runtime'da dinamik olarak ekleyip çıkarabilmek ve sınıf patlamasını (class explosion) önlemek için. @@
+```
+```diff
+> @@ Decorator Pattern, bir nesnenin davranışını nesneyi değiştirmeden, aynı interface üzerinden çalışan başka nesnelerle sararak genişletir. @@
+```
+
+__________________________________________
+```diff
+__________________________________________
+
+```diff
 @@  @@
 ```
 
 ```c#
 
 ```
-
-
+__________________________________________
 ```diff
 @@ Avantajları @@
 ✅ Constructor karmaşasını kaldırır.
