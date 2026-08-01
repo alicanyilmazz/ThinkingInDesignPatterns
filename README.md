@@ -487,3 +487,52 @@ __________________________________________
 ```c#
 Zincir new AuthorizationDecorator(new LoggingDecorator(new PaymentService())) ise ilk çalışan AuthorizationDecorator'dır. Sonra LoggingDecorator, en son PaymentService çalışır.
 ```
+```c#
+Soru
+
+Aşağıdakilerden hangisi Decorator Pattern'in en önemli avantajıdır?
+
+A) Nesnenin bellekte daha az yer kaplamasını sağlar.
+
+B) Runtime'da davranışların dinamik olarak eklenebilmesini sağlar.
+
+C) Constructor sayısını azaltır.
+
+D) Interface kullanımını ortadan kaldırır.
+
+✅ Cevap: B
+
+Soru
+
+Decorator hangi SOLID prensibini destekler?
+
+A) SRP
+
+B) OCP
+
+C) ISP
+
+D) DIP
+
+✅ En doğru cevap: B (Open/Closed Principle)
+
+Çünkü mevcut sınıfı değiştirmeden yeni davranış ekleriz.
+
+Not: Her decorator kendi sorumluluğuna sahip olduğu için dolaylı olarak SRP'yi de destekler, ancak mülakatlarda beklenen cevap OCP'dir.
+
+Soru
+
+Decorator ile ilgili aşağıdakilerden hangisi yanlıştır?
+
+A) Aynı interface'i implement eder.
+
+B) İçinde aynı interface'in referansını tutar.
+
+C) Davranış eklemek için kullanılır.
+
+D) Yeni nesnenin hangi tip olacağına karar verir.
+
+✅ Cevap: D
+
+Bu Factory Pattern'in görevidir.
+```
