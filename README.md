@@ -257,7 +257,7 @@ new CommissionCalculator(new VisaCommissionStrategy());
 ```
 
 ```diff
-Strategy switch’i tamamen yok eder mi?
+@@ Strategy switch’i tamamen yok eder mi? @@
 Her zaman değil.
 Bir yerde kart tipine göre strategy seçmemiz gerekebilir:
 ```
