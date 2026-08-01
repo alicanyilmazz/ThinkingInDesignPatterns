@@ -400,3 +400,75 @@ JournalBuilder → Journal nesnesinin alanlarını tek tek dolduracak.
 @@ Soru: return this neden kullanılır? @@
 > Cevap: Fluent API (method chaining) sağlamak için. Böylece ardışık metot çağrıları yapılabilir ve kod daha okunabilir olur.
 ```
+
+```c#
+Soru 1
+
+Builder Pattern'in çözmeye çalıştığı temel problem nedir?
+
+A) Nesne sayısını azaltmak
+
+B) Çok parametreli constructor karmaşasını azaltmak
+
+C) Veritabanı performansını artırmak
+
+D) Bellek kullanımını azaltmak
+
+Cevap : B
+
+Soru 2
+
+Aşağıdakilerden hangisi Builder'ın en önemli özelliğidir?
+
+A) Nesneyi tek satırda oluşturması
+
+B) Nesneyi adım adım oluşturması
+
+C) Singleton olması
+
+D) Interface kullanmaması
+
+Cevap : B
+
+Soru 3
+
+return this neden kullanılır?
+
+A) Performans için
+
+B) Garbage Collector çalışsın diye
+
+C) Method chaining (Fluent API) sağlamak için
+
+D) Thread-safe yapmak için
+
+Cevap : C
+
+Soru 4
+
+Aşağıdakilerden hangisi .NET'te Builder Pattern'e örnek olarak gösterilebilir?
+
+A) WebApplicationBuilder
+
+B) SqlConnection
+
+C) HttpClient
+
+D) List<T>
+
+Cevap : A
+
+Soru 5
+
+Builder ile Factory arasındaki temel fark nedir?
+
+A) İkisi tamamen aynıdır.
+
+B) Builder nesneyi adım adım oluşturur, Factory hangi nesnenin oluşturulacağını seçer.
+
+C) Factory sadece database için kullanılır.
+
+D) Builder sadece immutable class'larda kullanılır.
+
+Cevap : B
+```
