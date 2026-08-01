@@ -112,3 +112,146 @@ IPaymentService paymentService = new LegacyBankAdapter(new LegacyBankApi());
 
 paymentService.Pay(500);
 ```
+```diff
+@@ Decorator ile farkı @@
+```
+```
+Decorator
+
+davranış ekler.
+
+Logging
+
+↓
+
+Payment
+
+Adapter
+
+davranış eklemez.
+
+Sadece
+
+arayüzü değiştirir.
+
+Pay()
+
+↓
+
+ExecutePayment()
+```
+```diff
+@@ Facade ile farkı @@
+```
+```
+Bu çok sorulur.
+
+Adapter uyumsuz iki sistemi uyumlu hale getirir.
+
+Facade karmaşık sistemi basitleştirir.
+
+Mesela 20 metod var.
+
+Facade tek metod sunar.
+```
+```diff
+@@ Strategy ile farkı @@
+```
+```
+Strategy algoritma değiştirir.
+
+Visa 
+Master
+Troy
+
+Adapter algoritma değiştirmez.
+
+Sadece interface çevirir.
+```
+```diff
+Avantajları
+
+✅ Legacy sistemi değiştirmeyiz.
+
+✅ Yeni sistemi değiştirmeyiz.
+
+✅ Bağımlılığı azaltır.
+
+✅ Interface uyumsuzluğunu çözer.
+
+Dezavantaj
+
+❌ Çok fazla adapter olursa class sayısı artar.
+```
+```
+1)
+
+Adapter'ın temel amacı nedir?
+
+A) Yeni nesne üretmek
+
+B) Uyumsuz interface'leri uyumlu hale getirmek
+
+C) Algoritmayı değiştirmek
+
+D) Logging eklemek
+
+2)
+
+Hangisi Adapter için en uygun örnektir?
+
+A) SOAP → REST
+
+B) USB-C → HDMI
+
+C) Vendor SDK → Ortak Interface
+
+D) Hepsi
+
+3)
+
+Adapter hangi SOLID prensibini en çok destekler?
+
+A) OCP
+
+B) DIP
+
+C) SRP
+
+D) LSP
+
+4)
+
+Decorator ile Adapter arasındaki temel fark nedir?
+
+A) İkisi aynıdır.
+
+B) Decorator davranış ekler, Adapter interface çevirir.
+
+C) Adapter performans artırır.
+
+D) Decorator nesne üretir.
+
+5)
+
+ATM'de NCR SDK'sında
+
+ReadTrackData()
+
+ama sistem
+
+ReadCard()
+
+bekliyorsa hangi pattern uygundur?
+
+A) Builder
+
+B) Strategy
+
+C) Adapter
+
+D) Factory
+
+Doğru cevaplar
+B D B B C
+```
