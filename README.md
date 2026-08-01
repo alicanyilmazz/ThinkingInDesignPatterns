@@ -222,3 +222,108 @@ new MasterCardCommissionStrategy()
 @@ verdik. Strategy Pattern’in ana mantığı tam olarak budur.@@
 ```
 
+```diff
+@@ Strategy’nin parçaları @@
+@@ Örneğimizde dört ana parça vardır: @@
+
+@@ 1.) Strategy interface @@
+@@ Bütün algoritmaların sözleşmesi: @@
+```
+```c#
+ICommissionStrategy
+```
+```diff
+@@ 2.) Concrete Strategy @@
+@@ Gerçek algoritmalar: @@
+```
+```c#
+VisaCommissionStrategy
+MasterCardCommissionStrategy
+TroyCommissionStrategy
+```
+```diff
+@@ 3.) Context @@
+@@ Algoritmayı kullanan sınıf: @@
+```
+```c#
+CommissionCalculator
+```
+```diff
+@@ 4.) Client @@
+@@ Hangi strategy’nin kullanılacağını seçen taraf: @@
+```
+```c#
+new CommissionCalculator(new VisaCommissionStrategy());
+```
+
+```diff
+Strategy switch’i tamamen yok eder mi?
+Her zaman değil.
+Bir yerde kart tipine göre strategy seçmemiz gerekebilir:
+```
+```c#
+ICommissionStrategy strategy = cardType switch
+{
+    CardType.Visa => new VisaCommissionStrategy(),
+    CardType.MasterCard => new MasterCardCommissionStrategy(),
+    CardType.Troy => new TroyCommissionStrategy(),
+    _ => throw new NotSupportedException()
+};
+```
+```diff
+Buradaki fark şudur:
+
+Eskiden bütün iş kuralları tek switch içindeydi:
+
+return amount * 0.02m;
+return amount * 0.03m;
+return amount * 0.01m;
+
+Şimdi switch yalnızca doğru strategy’yi seçiyor. Algoritmalar ayrı sınıflarda bulunuyor.
+
+Bu seçim işlemi daha sonra Factory veya Dependency Injection ile de yapılabilir.
+```
+__________________________________________
+```diff
+@@ Factory ile farkı @@
+
+Strategy:
+
+Hesaplama nasıl yapılacak?
+
+Visa komisyon algoritması
+MasterCard komisyon algoritması
+Troy komisyon algoritması
+
+Factory:
+
+Hangi strategy oluşturulacak veya seçilecek?
+
+Kart Visa ise VisaCommissionStrategy seç.
+Kart Troy ise TroyCommissionStrategy seç.
+
+Kısaca:
+
+Factory seçer.
+Strategy işi yapar.
+```
+__________________________________________
+```diff
+@@ Decorator ile farkı @@
+
+Strategy, mevcut davranışlardan birini seçer:
+
+Visa veya MasterCard veya Troy
+
+Decorator, mevcut davranışın çevresine ek davranış koyar:
+
+Logging
+   ↓
+Retry
+   ↓
+PaymentService
+
+Strategy’de çoğunlukla alternatiflerden biri çalışır.
+
+Decorator’da davranışlar katmanlar halinde birlikte çalışabilir.
+```
