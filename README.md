@@ -18,7 +18,7 @@ Troy için %1
 @@ Strategy kullanmadan önce @@
 ```
 
-```
+```c#
 public decimal CalculateCommission(
     string cardType,
     decimal amount)
