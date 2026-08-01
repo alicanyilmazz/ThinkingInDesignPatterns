@@ -1,4 +1,6 @@
 ﻿using CreationalPatterns.FactoryMethod;
+using CreationalPatterns.FactoryMethod.Notification;
+using CreationalPatterns.FactoryMethod.Strategy;
 using Microsoft.VisualBasic;
 
 // BAD CODE: This is a bad implementation of the Factory Method pattern. The code is tightly coupled to the concrete implementations of the commission strategies,
@@ -28,4 +30,10 @@ ICommissionStrategy strategie = factory.Create(CardType.MasterCard);
 
 decimal commission = strategie.Calculate(1000);
 
-Console.WriteLine(commission); 
+Console.WriteLine(commission);
+
+// 
+
+NotificationCreator creator = new EmailNotificationCreator();
+
+creator.Notify("İşlem başarılı.");

@@ -1,4 +1,4 @@
-﻿namespace CreationalPatterns.FactoryMethod;
+﻿namespace CreationalPatterns.FactoryMethod.Strategy;
 
 public sealed class MasterCardCommissionStrategy : ICommissionStrategy
 {

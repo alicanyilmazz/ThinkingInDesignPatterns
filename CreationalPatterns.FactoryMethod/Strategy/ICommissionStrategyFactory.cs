@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace CreationalPatterns.FactoryMethod;
+namespace CreationalPatterns.FactoryMethod.Strategy;
 
 public interface ICommissionStrategyFactory
 {
