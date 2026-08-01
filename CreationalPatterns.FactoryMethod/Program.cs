@@ -1,12 +1,12 @@
-﻿using Microsoft.VisualBasic;
+﻿using CreationalPatterns.FactoryMethod;
+using Microsoft.VisualBasic;
 
-public interface ICommissionStrategy
-{
-    decimal Calculate(decimal amount);
-}
+// BAD CODE: This is a bad implementation of the Factory Method pattern. The code is tightly coupled to the concrete implementations of the commission strategies,
+// which makes it difficult to add new strategies or change existing ones without modifying the client code.
+// A better approach would be to use a factory class or method to create the appropriate strategy based on the card type.
 
 ICommissionStrategy strategy;
-
+var cardType = CardType.Visa; 
 if (cardType == CardType.Visa)
 {
     strategy = new VisaCommissionStrategy();
@@ -19,3 +19,13 @@ else
 {
     strategy = new TroyCommissionStrategy();
 }
+
+// GOOD CODE 
+
+ICommissionStrategyFactory factory = new CommissionStrategyFactory();
+
+ICommissionStrategy strategie = factory.Create(CardType.MasterCard);
+
+decimal commission = strategie.Calculate(1000);
+
+Console.WriteLine(commission); 
