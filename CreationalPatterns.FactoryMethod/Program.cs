@@ -1,6 +1,10 @@
 ﻿using Microsoft.VisualBasic;
 
-Console.WriteLine("Hello, World!");
+public interface ICommissionStrategy
+{
+    decimal Calculate(decimal amount);
+}
+
 ICommissionStrategy strategy;
 
 if (cardType == CardType.Visa)
