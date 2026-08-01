@@ -479,28 +479,11 @@ __________________________________________
 ```
 
 __________________________________________
+
 ```diff
-```
-```diff
-@@  @@
+@@ LoggingDecorator -> AuthorizationDecorator -> PaymentService zincirinde Pay() çağrıldığında ilk çalışan hangisidir? @@
 ```
 
 ```c#
-
-```
-__________________________________________
-```diff
-@@ Avantajları @@
-✅ Constructor karmaşasını kaldırır.
-✅ Okunabilirliği artırır.
-✅ Fluent API sağlar.
-✅ Immutable class'larda çok kullanılır.
-✅ Validation eklenebilir.
-```
-__________________________________________
-```diff
-@@ Dezavantajları @@
-❌ Küçük sınıflar için gereksiz olabilir.
-❌ Her model için ekstra Builder sınıfı yazılır.
-❌ Çok basit nesnelerde new kullanmak daha pratiktir.
+Zincir new AuthorizationDecorator(new LoggingDecorator(new PaymentService())) ise ilk çalışan AuthorizationDecorator'dır. Sonra LoggingDecorator, en son PaymentService çalışır.
 ```
