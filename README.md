@@ -168,7 +168,7 @@ _commissionStrategy.Calculate(amount);
 ```
 ```diff
 @@ Kullanımı @@
-@@ @@ Kullanımı @@ @@
+@@ Visa için @@
 ```
 
 ```c#
@@ -201,4 +201,24 @@ var calculator = new CommissionCalculator(strategy);
 
 decimal commission = calculator.Calculate(1000);
 
-Console.WriteLine(commission); // 30```
+Console.WriteLine(commission); // 30
+
+```
+
+```diff
+@@ Burada CommissionCalculator değişmedi. @@
+@@ Sadece verdiğimiz strategy değişti @@
+```
+```c#
+new VisaCommissionStrategy()
+```
+```diff
+@@ yerine @@
+```
+```c#
+new MasterCardCommissionStrategy()
+```
+```diff
+@@ verdik. Strategy Pattern’in ana mantığı tam olarak budur.@@
+```
+
