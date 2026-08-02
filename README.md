@@ -629,3 +629,87 @@ derse
 
 devam etmez.
 ```
+
+> Chain of Responsibility Pattern, bir isteği birden fazla handler'ın sırayla işlemesini sağlar. Her handler isterse isteği işler ve zinciri devam ettirir, isterse zinciri durdurur.
+
+> ASP.NET Core Middleware neden Chain of Responsibility'dir?
+> Çünkü her middleware request'i işler ve await next() çağırarak pipeline'ın devam etmesine karar verir. İsterse next() çağırmayıp pipeline'ı sonlandırabilir.
+
+```
+1)
+
+Chain of Responsibility'nin temel amacı nedir?
+
+A) Algoritma değiştirmek
+
+B) İsteği sırayla birden fazla handler'ın işlemesi
+
+C) Nesne üretmek
+
+D) Interface çevirmek
+
+2)
+
+Handler zinciri hangi durumda durur?
+
+A) İlk handler çalışınca
+
+B) Son handler çalışınca
+
+C) Bir handler isteği sonlandırıp devam ettirmezse
+
+D) Her zaman tüm handler'lar çalışır
+
+3)
+
+ASP.NET Core'da aşağıdakilerden hangisi Chain of Responsibility örneğidir?
+
+A) Dependency Injection
+
+B) Middleware Pipeline
+
+C) AutoMapper
+
+D) Entity Framework
+
+4)
+
+await next() hangi anlama gelir?
+
+A) Yeni nesne oluştur.
+
+B) Bir sonraki handler'ı çalıştır.
+
+C) Event yayınla.
+
+D) Transaction başlat.
+
+5)
+
+ATM'de aşağıdaki akış hangi pattern'e örnektir?
+
+Kart Kontrolü
+      ↓
+PIN Kontrolü
+      ↓
+Limit Kontrolü
+      ↓
+Fraud Kontrolü
+      ↓
+Para Ver
+
+A) Strategy
+
+B) Factory
+
+C) Chain of Responsibility
+
+D) Observer
+
+Doğru Cevaplar
+B
+C
+B
+B
+C
+```
