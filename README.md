@@ -467,7 +467,7 @@ iş isteğini temsil eder.
 
 > Çünkü CreateOrderCommand gibi istekler bir işi temsil eden nesnelerdir. Bu nesneler handler tarafından çalıştırılır. Command ile işi isteyen (sender) ile işi yapan (handler) birbirinden ayrılır.
 
-Mini Test
+__________________________________________
 1)
 
 Command Pattern'in temel amacı nedir?
@@ -559,6 +559,8 @@ Command
 ↓
 
 Receiver
+
+__________________________________________
 Doğru cevaplar
 B
 C
