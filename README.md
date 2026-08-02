@@ -789,7 +789,7 @@ await Task.WhenAll(
             cancellationToken)));
 ```
 
-```
+```diff
 Ancak paralel çalıştırmada:
 
 Thread safety
@@ -799,7 +799,7 @@ Sıralama
 
 konularına dikkat edilmelidir.
 
-Ne zaman kullanılır?
+- Ne zaman kullanılır?
 
 Observer şu durumlarda uygundur:
 
@@ -809,7 +809,9 @@ Event-driven yapı kuruluyorsa
 UI güncellemeleri yapılacaksa
 Domain event kullanılacaksa
 Notification sistemi kurulacaksa
-Ne zaman kullanılmamalı?
+
+- Ne zaman kullanılmamalı?
+
 Yalnızca tek ve zorunlu bir işlem varsa
 İşlem sırası kesin ve transaction içinde olmalıysa
 Hata durumunda bütün işlemler birlikte rollback edilmeli ise
@@ -820,7 +822,7 @@ Event zinciri sistemi gereksiz karmaşıklaştırıyorsa
 Mülakat cevabı
 
 Observer Pattern, bir subject’in durumunda değişiklik olduğunda ona abone olan observer’ların otomatik olarak bilgilendirilmesini sağlar. Publisher subscriber’ların concrete implementasyonlarını bilmez. C#’ta event/delegate, ASP.NET Core’da domain event veya MediatR notification, microservice sistemlerinde ise message broker tabanlı Pub/Sub yapıları bu yaklaşıma örnek verilebilir.
-
+```
 Kısa özeti:
 
 Bir olay olur → Birden fazla abone haberdar edilir.
