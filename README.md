@@ -401,7 +401,427 @@ orderService.CreateOrder(
 @@ Abonelik kaldırma: @@
 ```
 
-```c#
-orderService.OrderCreated -= emailHandler.Handle;
+__________________________________________
+
+
+
+```diff
+@@ ASP.NET Core örneği: Domain Event @@
+
+ASP.NET Core uygulamalarında Observer mantığı çoğu zaman domain event veya notification handler üzerinden uygulanır.
+
+Örneğin sipariş oluşturulunca:
 ```
-> Bu, C#’taki klasik Observer Pattern kullanımına çok yakındır.
+
+```c#
+public sealed record OrderCreatedEvent(
+    int OrderId,
+    string CustomerEmail,
+    decimal TotalAmount);
+```
+```diff
+@@ Handler interface: @@
+```
+
+```c#
+public interface IDomainEventHandler<in TEvent>
+{
+    Task HandleAsync(
+        TEvent domainEvent,
+        CancellationToken cancellationToken);
+}
+```
+```diff
+@@ Email handler: @@
+```
+
+```c#
+public sealed class SendOrderEmailHandler
+    : IDomainEventHandler<OrderCreatedEvent>
+{
+    public Task HandleAsync(
+        OrderCreatedEvent domainEvent,
+        CancellationToken cancellationToken)
+    {
+        Console.WriteLine(
+            $"E-posta gönderildi: " +
+            $"{domainEvent.CustomerEmail}");
+
+        return Task.CompletedTask;
+    }
+}
+```
+```diff
+@@ Stock handler: @@
+```
+
+```c#
+public sealed class ReduceStockHandler
+    : IDomainEventHandler<OrderCreatedEvent>
+{
+    public Task HandleAsync(
+        OrderCreatedEvent domainEvent,
+        CancellationToken cancellationToken)
+    {
+        Console.WriteLine(
+            $"Stok azaltıldı. OrderId: " +
+            $"{domainEvent.OrderId}");
+
+        return Task.CompletedTask;
+    }
+}
+```
+```diff
+@@ Publisher @@
+```
+
+```c#
+public sealed class DomainEventPublisher
+{
+    private readonly IServiceProvider _serviceProvider;
+
+    public DomainEventPublisher(
+        IServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
+    }
+
+    public async Task PublishAsync<TEvent>(
+        TEvent domainEvent,
+        CancellationToken cancellationToken)
+    {
+        IEnumerable<IDomainEventHandler<TEvent>> handlers =
+            _serviceProvider.GetServices<
+                IDomainEventHandler<TEvent>>();
+
+        foreach (IDomainEventHandler<TEvent> handler in handlers)
+        {
+            await handler.HandleAsync(
+                domainEvent,
+                cancellationToken);
+        }
+    }
+}
+```
+```diff
+@@ DI kayıtları: @@
+```
+
+```c#
+builder.Services.AddScoped<
+    IDomainEventHandler<OrderCreatedEvent>,
+    SendOrderEmailHandler>();
+
+builder.Services.AddScoped<
+    IDomainEventHandler<OrderCreatedEvent>,
+    ReduceStockHandler>();
+
+builder.Services.AddScoped<DomainEventPublisher>();
+```
+```diff
+@@ Order service: @@
+```
+
+```c#
+public sealed class OrderApplicationService
+{
+    private readonly DomainEventPublisher _publisher;
+
+    public OrderApplicationService(
+        DomainEventPublisher publisher)
+    {
+        _publisher = publisher;
+    }
+
+    public async Task CreateOrderAsync(
+        Order order,
+        CancellationToken cancellationToken)
+    {
+        Console.WriteLine(
+            $"Order kaydedildi: {order.Id}");
+
+        var domainEvent = new OrderCreatedEvent(
+            order.Id,
+            order.CustomerEmail,
+            order.TotalAmount);
+
+        await _publisher.PublishAsync(
+            domainEvent,
+            cancellationToken);
+    }
+}
+```
+```diff
+@@ Bu yapıda OrderApplicationService, email ve stock handler’larını doğrudan bilmez. @@
+Sadece event yayınlar.
+```
+__________________________________________
+```diff
+@@ MediatR ile Observer mantığı @@
+Gerçek ASP.NET Core projelerinde MediatR notification yapısı da Observer mantığına benzer.
+Event:
+```
+```c#
+public sealed record OrderCreatedNotification(
+    int OrderId,
+    string CustomerEmail)
+    : INotification;
+```
+```diff
+@@ Handler 1: @@
+```
+
+```c#
+public sealed class SendEmailHandler
+    : INotificationHandler<OrderCreatedNotification>
+{
+    public Task Handle(
+        OrderCreatedNotification notification,
+        CancellationToken cancellationToken)
+    {
+        Console.WriteLine(
+            $"E-posta gönderildi: " +
+            $"{notification.CustomerEmail}");
+
+        return Task.CompletedTask;
+    }
+}
+```
+```diff
+@@ Handler 2: @@
+```
+
+```c#
+public sealed class CreateInvoiceHandler
+    : INotificationHandler<OrderCreatedNotification>
+{
+    public Task Handle(
+        OrderCreatedNotification notification,
+        CancellationToken cancellationToken)
+    {
+        Console.WriteLine(
+            $"Fatura oluşturuldu: {notification.OrderId}");
+
+        return Task.CompletedTask;
+    }
+}
+```
+```diff
+@@ Yayınlama: @@
+```
+
+```c#
+await mediator.Publish(
+    new OrderCreatedNotification(
+        order.Id,
+        order.CustomerEmail),
+    cancellationToken);
+```
+```diff
+Bir event yayınlanır, birden fazla handler çalışabilir.
+
+Bu yapı Observer Pattern’in modern uygulamalarından biridir.
+```
+__________________________________________
+
+```diff
+@@ Microservice dünyasında Observer @@
+Microservice’lerde publisher ve subscriber çoğu zaman aynı process içinde değildir.
+
+Örneğin:
+```
+
+```c#
+Order Service
+   ↓
+OrderCreated event
+   ↓
+RabbitMQ / Kafka
+   ↓
+Inventory Service
+Notification Service
+Invoice Service
+Shipping Service
+```
+```diff
+@@ Burada Order Service publisher’dır. @@
+
+@@ Diğer servisler subscriber’dır. @@
+
+@@ Bu yapı klasik Observer’ın dağıtık sistem versiyonu gibi düşünülebilir. Fakat message broker kullanıldığı için bazı ek konular gelir: @@
+
+- Eventual consistency
+- Retry
+- Duplicate message
+- Idempotency
+- Outbox Pattern
+- Dead-letter queue
+- Message ordering
+
+Observer mantığı temel olsa da dağıtık sistemde güvenilir mesajlaşma ayrıca çözülmelidir.
+```
+
+```diff
+@@ React ile ilişkisi @@
+
+React’te state değiştiğinde component’lerin yeniden render edilmesi Observer mantığına benzer.
+
+Örneğin Context Provider bir değer yayınlar:
+```
+
+```c#
+const ThemeContext = createContext("light");
+```
+```diff
+@@ Context kullanan component’ler bu değere abonedir: @@
+```
+
+```c#
+const theme = useContext(ThemeContext);
+```
+```diff
+Provider değeri değiştiğinde subscriber component’ler yeniden render edilir.
+
+Bu birebir klasik GoF implementasyonu değildir ama publisher-subscriber fikri aynıdır.
+```
+
+```c#
+```
+```diff
+@@ Observer ile Pub/Sub farkı @@
+Çok önemli bir farktır.
+
+@@ Observer @@
+Subject, observer referanslarını genelde doğrudan tutar:
+```
+
+```c#
+Subject
+  ├─ Observer A
+  ├─ Observer B
+  └─ Observer C
+```
+```diff
+Publisher ile subscriber arasında doğrudan veya aynı process içinde ilişki vardır.
+@@ Pub/Sub @@
+Arada broker veya event bus vardır:
+```
+
+```c#
+Publisher
+   ↓
+Message Broker
+   ↓
+Subscriber
+```
+```diff
+Publisher subscriber’ları bilmez.
+
+Microservice mimarisinde daha çok Pub/Sub kullanılır.
+
+Kısa fark:
+- Observer → Doğrudan abonelik
+- Pub/Sub  → Broker üzerinden abonelik
+```
+
+```diff
+@@ Observer ile Mediator farkı @@
+Observer’da bir publisher olayı yayınlar, birden fazla observer dinler.
+
+Mediator’da nesneler birbirleriyle doğrudan konuşmak yerine merkezi mediator üzerinden iletişim kurar.
+Observer:
+Publisher → Birden fazla subscriber
+
+Mediator:
+Component A → Mediator → Component B
+```
+```diff
+@@ Observer ile Decorator farkı @@
+```
+```diff
+Decorator bir nesnenin davranışını sararak genişletir:
+Logging → Retry → Payment
+Observer bir olay olduğunda birden fazla subscriber’ı bilgilendirir:
+OrderCreated
+  ├─ Email
+  ├─ Stock
+  └─ Invoice
+```
+```diff
+@@ Avantajları @@
+✅ Publisher ve subscriber bağımlılığı azalır.
+✅ Yeni subscriber eklemek kolaydır.
+✅ Bir olay birden fazla işlem tetikleyebilir.
+✅ OCP desteklenir.
+✅ Event-driven sistemlerin temelini oluşturur.
+✅ Yan işlemler ana servisten ayrılır.
+
+@@ Dezavantajları @@
+❌ Çalışma sırası belirsizleşebilir.
+❌ Hangi observer’ın çalıştığını takip etmek zorlaşabilir.
+❌ Bir observer hata verirse diğerlerini etkileyebilir.
+❌ Unsubscribe yapılmazsa memory leak oluşabilir.
+❌ Çok fazla event varsa sistemin akışı görünmez hale gelebilir.
+❌ Senkron observer’lar ana işlemi yavaşlatabilir.
+```
+
+```diff
+@@ Senkron ve asenkron Observer @@
+@@ Senkron @@
+```
+
+```c#
+foreach (var observer in observers)
+{
+    observer.Update(order);
+}
+```
+```diff
+@@ Bir observer yavaşsa bütün işlem bekler. @@
+@@ Asenkron @@
+```
+
+```c#
+await Task.WhenAll(
+    observers.Select(
+        observer => observer.UpdateAsync(
+            order,
+            cancellationToken)));
+```
+
+```
+Ancak paralel çalıştırmada:
+
+Thread safety
+Hata yönetimi
+Transaction bütünlüğü
+Sıralama
+
+konularına dikkat edilmelidir.
+
+Ne zaman kullanılır?
+
+Observer şu durumlarda uygundur:
+
+Bir değişiklik birden fazla tarafı ilgilendiriyorsa
+Publisher subscriber’ları doğrudan bilmemeliyse
+Event-driven yapı kuruluyorsa
+UI güncellemeleri yapılacaksa
+Domain event kullanılacaksa
+Notification sistemi kurulacaksa
+Ne zaman kullanılmamalı?
+Yalnızca tek ve zorunlu bir işlem varsa
+İşlem sırası kesin ve transaction içinde olmalıysa
+Hata durumunda bütün işlemler birlikte rollback edilmeli ise
+Event zinciri sistemi gereksiz karmaşıklaştırıyorsa
+
+Örneğin bakiye düşme ve muhasebe kaydı aynı transaction içinde kesinlikle birlikte yapılmalıysa bunları gevşek observer’lara bırakmak riskli olabilir.
+
+Mülakat cevabı
+
+Observer Pattern, bir subject’in durumunda değişiklik olduğunda ona abone olan observer’ların otomatik olarak bilgilendirilmesini sağlar. Publisher subscriber’ların concrete implementasyonlarını bilmez. C#’ta event/delegate, ASP.NET Core’da domain event veya MediatR notification, microservice sistemlerinde ise message broker tabanlı Pub/Sub yapıları bu yaklaşıma örnek verilebilir.
+
+Kısa özeti:
+
+Bir olay olur → Birden fazla abone haberdar edilir.
+```
