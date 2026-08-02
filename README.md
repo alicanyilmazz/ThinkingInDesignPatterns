@@ -279,50 +279,289 @@ __________________________________________
 - Mesela
 ```
 ```c#
+public class CreateProductCommand : IRequest<Guid>
+{
+    public string Name { get; set; }
+
+    public decimal Price { get; set; }
+}
 ```
 ```diff
-@@  @@
-```
-```diff
-@@  @@
-```
-```c#
-```
-```diff
-@@  @@
-```
-```diff
-@@  @@
-```
-```c#
-```
-```diff
-@@  @@
-```
-```diff
-@@  @@
-```
-```c#
-```
-```diff
-@@  @@
-```
-```diff
-@@  @@
-```
-```c#
-```
-```diff
-@@  @@
-```
-```diff
-@@  @@
-```
-```c#
-```
-```diff
-@@  @@
+Bu aslında
+
+Command'dır.
+
+Handler
 ```
 
 ```c#
+public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,Guid>
+{
+    public async Task<Guid> Handle(...)
+    {
+        ...
+    }
+}
 ```
+```diff
+@@ Burada @@
+```
+```diff
+CreateProductCommand
+↓
+Handler
+↓
+Repository
+↓
+Save
+
+Bu aslında GoF Command Pattern'in modern hali.
+```
+__________________________________________
+
+
+```diff
+@@ CQRS  @@
+Neden
+```
+```c#
+CreateProductCommand
+```
+```diff
+@@ diyoruz? Niye @@
+```
+```c#
+CreateProductRequest
+```
+```diff
+@@ demiyoruz? Çünkü Command bir niyeti temsil eder. Ürün oluştur. @@
+```
+```diff
+@@ RabbitMQ @@
+
+Mesela
+
+WithdrawCommand
+↓
+RabbitMQ
+↓
+Consumer
+↓
+CashService
+
+Bu da Command.
+
+@@ Hangfire @@
+SendMailCommand
+↓
+Queue
+↓
+1 saat sonra Execute()
+
+Yine Command.
+```
+```c#
+Undo
+
+En meşhur örnek.
+
+Word.
+
+Ctrl + Z
+
+Her işlem
+
+bir command.
+
+BoldCommand
+
+ItalicCommand
+
+DeleteCommand
+
+Hepsinde
+
+Undo()
+
+olabilir.
+
+public interface ICommand
+{
+    void Execute();
+
+    void Undo();
+}
+```
+```diff
+@@ Avantajları @@
+
+✅ İş isteğini nesne haline getirir.
+
+✅ Queue'ya koyabilirsin.
+
+✅ Loglayabilirsin.
+
+✅ Retry yapabilirsin.
+
+✅ Undo yapabilirsin.
+
+✅ Serialize edebilirsin.
+
+@@ Dezavantaj @@
+
+Çok fazla command oluşabilir.
+```
+```diff
+@@  @@
+```
+```c#
+```
+```diff
+@@ Strategy ile fark @@
+
+Strategy
+
+Nasıl yapılacak?
+
+Command
+
+Ne yapılacak?
+@@ Observer ile fark @@
+
+Observer
+
+Bir olay oldu.
+
+Herkes haberdar olsun.
+
+Command
+
+Git bunu yap.
+@@ Facade ile fark @@
+
+Facade
+
+Birçok servisi tek metod altında toplar.
+
+Command
+
+Bir işi nesne haline getirir.
+@@ Factory ile fark @@
+
+Factory
+
+nesne üretir.
+
+Command
+
+iş isteğini temsil eder.
+```
+
+> Command Pattern, yapılacak işi (request) bir nesne haline getirerek, bu isteğin farklı zamanlarda, farklı yerlerde çalıştırılmasını sağlar.
+
+> Mülakatta çok sorulan soru
+
+> MediatR neden Command Pattern olarak kabul edilir?
+
+> Cevap:
+
+> Çünkü CreateOrderCommand gibi istekler bir işi temsil eden nesnelerdir. Bu nesneler handler tarafından çalıştırılır. Command ile işi isteyen (sender) ile işi yapan (handler) birbirinden ayrılır.
+
+Mini Test
+1)
+
+Command Pattern'in temel amacı nedir?
+
+A) Algoritma değiştirmek
+
+B) Yapılacak işi nesne haline getirmek
+
+C) Interface çevirmek
+
+D) Nesne üretmek
+
+2)
+
+Command Pattern'de işi gerçekten yapan kimdir?
+
+A) Invoker
+
+B) Client
+
+C) Receiver
+
+D) Factory
+
+3)
+
+MediatR'daki CreateProductCommand hangi pattern'e örnektir?
+
+A) Strategy
+
+B) Observer
+
+C) Command
+
+D) Adapter
+
+4)
+
+Hangisi Command Pattern için uygun örnektir?
+
+A) Undo/Redo
+
+B) Hangfire Job
+
+C) RabbitMQ Consumer
+
+D) Hepsi
+
+5)
+
+Command Pattern'de butona basıldığında tipik akış hangisidir?
+
+A)
+
+Button
+↓
+
+Receiver
+↓
+
+Command
+
+B)
+
+Button
+↓
+
+Command
+↓
+
+Receiver
+
+C)
+
+Receiver
+↓
+
+Button
+↓
+
+Command
+
+D)
+
+Factory
+↓
+
+Command
+↓
+
+Receiver
+Doğru cevaplar
+B
+C
+C
+D
+B
