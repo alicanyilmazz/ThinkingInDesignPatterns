@@ -356,7 +356,7 @@ olursa
 ❌ God Class olur.
 ```
 
-```c#
+```diff
 @@ Adapter ile farkı @@ 
 
 En çok sorulan soru.
