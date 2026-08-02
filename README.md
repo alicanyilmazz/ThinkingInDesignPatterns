@@ -282,29 +282,246 @@ Cancel()
 ```
 
 ```diff
-@@  @@
+@@ Bak dikkat et. Aynı @@
+Cancel()
+metodu farklı sonuç verdi.
+
+Neden?
+
+Çünkü
+
+State değişti.
 ```
 
 ```c#
 ```
 
 ```diff
-@@  @@
+@@ TCP Connection @@
+Microsoft'un klasik örneği.
 ```
 
-```c#
+```
+Closed
+↓
+Listen
+↓
+Established
+↓
+Closing
 ```
 
 ```diff
-@@  @@
+@@ Aynı Send() Closed iken çalışmaz. Established iken çalışır.@@
 ```
-
-```c#
-```
-
+__________________________________________
 ```diff
-@@  @@
+@@ MassTransit @@
+Saga aslında State Machine'dir.
+
+Bu yüzden State Pattern'i bilirsen
+
+Saga çok kolay gelir.
+```
+```
+Avantajları
+
+✅ if/switch azalır.
+
+✅ Her state tek class.
+
+✅ Yeni state eklemek kolay.
+
+✅ Kod okunur.
+
+Dezavantaj
+
+❌ State çok artarsa
+
+20 state
+
+olabilir.
 ```
 
-```c#
+
+```
+Strategy ile fark
+
+En çok gelen soru.
+
+Strategy
+
+Algoritma
+
+kullanıcı seçer.
+
+Visa
+
+Master
+
+Troy
+State
+
+Algoritmayı
+
+nesnenin mevcut durumu seçer.
+
+Pending
+
+Paid
+
+Shipped
+
+Bak
+
+kim seçiyor?
+
+State.
+
+Factory ile fark
+
+Factory
+
+hangi nesne?
+
+State
+
+hangi durumda?
+Command ile fark
+
+Command
+
+Ne yapılacak?
+
+State
+
+Şu an hangi durumdayım?
+Observer ile fark
+
+Observer
+
+Bir olay oldu.
+
+Herkes öğrensin.
+
+State
+
+Durum değişti.
+
+Davranış değişti.
+Strategy ile karıştırma
+
+Şunu ezberle.
+
+Strategy
+Dışarıdan seçilir.
+
+Mesela
+
+Visa
+
+Master
+
+Sen seçiyorsun.
+
+State
+Kendi kendine değişir.
+Pending
+
+↓
+
+Paid
+
+↓
+
+Shipped
+
+Sistem
+
+state'i değiştiriyor.
+```
+> State Pattern, bir nesnenin davranışını bulunduğu duruma göre değiştirmesini sağlar. Durum değiştikçe nesnenin davranışı da değişir.
+
+> State ile Strategy arasındaki fark nedir?
+> Strategy'de algoritma dışarıdan seçilir. State Pattern'de ise davranış, nesnenin mevcut durumuna göre otomatik değişir ve state'ler birbirine geçiş yapabilir.
+
+```
+1)
+
+State Pattern'in temel amacı nedir?
+
+A) Nesne üretmek
+
+B) Davranışı mevcut duruma göre değiştirmek
+
+C) Algoritma seçmek
+
+D) Interface çevirmek
+
+2)
+
+Sipariş
+
+Pending
+
+↓
+
+Paid
+
+↓
+
+Shipped
+
+hangi pattern'dir?
+
+A) Strategy
+
+B) State
+
+C) Builder
+
+D) Factory
+
+3)
+
+Aşağıdakilerden hangisi State Pattern için uygun örnektir?
+
+A) TCP Connection
+
+B) ATM işlem durumu
+
+C) Sipariş workflow'u
+
+D) Hepsi
+
+4)
+
+Strategy ile State arasındaki temel fark nedir?
+
+A) İkisi aynıdır.
+
+B) Strategy algoritmayı dışarıdan seçer, State mevcut duruma göre davranışı değiştirir.
+
+C) State nesne üretir.
+
+D) Strategy event yayınlar.
+
+5)
+
+MassTransit Saga en çok hangi pattern ile ilişkilidir?
+
+A) Observer
+
+B) Factory
+
+C) State
+
+D) Decorator
+
+Doğru Cevaplar
+B
+B
+D
+B
+C
 ```
