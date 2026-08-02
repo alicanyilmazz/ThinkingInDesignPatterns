@@ -355,3 +355,154 @@ olursa
 
 ❌ God Class olur.
 ```
+
+```c#
+@@ Adapter ile farkı @@ 
+
+En çok sorulan soru.
+
+Adapter
+
+İki sistemi
+
+uyumlu yapar.
+
+Pay()
+
+↓
+
+ExecutePayment()
+Facade
+
+Karmaşık sistemi
+
+basitleştirir.
+
+20 servis
+
+↓
+
+Withdraw()
+
+@@ Strategy ile farkı @@ 
+
+Strategy algoritma değiştirir.
+
+Facade algoritma değiştirmez.
+
+Servisleri organize eder.
+
+@@ Decorator ile farkı @@ 
+
+Decorator davranış ekler.
+
+Facade davranış eklemez.
+
+Sadece çağrıları sadeleştirir.
+
+@@ Factory ile farkı @@
+
+Factory nesne üretir.
+
+Facade nesne üretmez.
+
+Servisleri kullanır.
+```
+
+> Facade Pattern, karmaşık alt sistemleri tek ve basit bir arayüz altında toplayarak client'ın bu karmaşıklığı bilmesini engeller.
+
+ ```c#
+1)
+
+Facade'ın temel amacı nedir?
+
+A) Yeni nesne üretmek
+
+B) Karmaşık alt sistemleri tek arayüz altında toplamak
+
+C) Algoritma değiştirmek
+
+D) Interface çevirmek
+
+2)
+
+ATM'de para çekme sırasında
+
+Card
+
+↓
+
+PIN
+
+↓
+
+Balance
+
+↓
+
+Fraud
+
+↓
+
+Cash
+
+↓
+
+Journal
+
+bunları tek servis altında toplamak hangi pattern'dir?
+
+A) Strategy
+
+B) Adapter
+
+C) Facade
+
+D) Builder
+
+3)
+
+Facade hangi SOLID prensibini doğrudan uygulamak için yazılmış bir pattern değildir?
+
+A) SRP
+
+B) OCP
+
+C) DIP
+
+D) Hiçbiri
+
+Doğru cevap: D
+Facade bir SOLID pattern'i değildir; ancak bağımlılıkları sadeleştirerek SOLID'e katkı sağlayabilir.
+
+4)
+
+Facade ne yapmaz?
+
+A) Alt servisleri çağırır.
+
+B) İş akışını organize eder.
+
+C) Karmaşık sistemi sadeleştirir.
+
+D) Interface uyumsuzluğunu çözer.
+
+5)
+
+Adapter ile Facade arasındaki fark nedir?
+
+A) Aynıdır.
+
+B) Adapter uyumsuz interface'leri uyumlu yapar, Facade karmaşık sistemi sadeleştirir.
+
+C) Facade nesne üretir.
+
+D) Adapter algoritma değiştirir.
+
+Doğru cevaplar
+B
+C
+D
+D
+B
+```
