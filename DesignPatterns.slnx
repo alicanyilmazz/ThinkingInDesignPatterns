@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="BehavioralPatterns.Strategy/BehavioralPatterns.Strategy.csproj" Id="03557d15-8b85-49ce-b3d7-9bf2a709c03f" />
+  <Project Path="Services/Services.csproj" Id="3d310de3-e7f7-4366-84e8-6ce66bbffec3" />
   <Project Path="Strategy/Strategy.csproj" Id="ea7d82e0-ac56-46f7-92ad-48623a0fbedf" />
 </Solution>
