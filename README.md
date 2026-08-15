@@ -1,24 +1,26 @@
-# DesignPatterns
+# Design Patterns
+
 ```diff
 @@ Strategy Pattern @@
 
-- Strategy Pattern şu problemi çözer:
+- Strategy Pattern solves the following problem:
 
-@@ Aynı işi yapan fakat farklı şekilde çalışan birden fazla algoritmamız varsa, her algoritmayı ayrı sınıfa koyarız ve çalışma sırasında hangisinin kullanılacağını seçeriz. @@
-
-```
-```
-Örneğin ATM’de para çekme komisyonu hesaplanacak:
-
-Visa için %2
-MasterCard için %3
-Troy için %1
-```
-```diff
-@@ Strategy kullanmadan önce @@
+@@ When we have multiple algorithms that perform the same type of operation in different ways, we place each algorithm in a separate class and choose which one to use at runtime. @@
 ```
 
-```c#
+For example, suppose an ATM calculates withdrawal commission differently depending on the card brand:
+
+```text
+Visa       → 2%
+MasterCard → 3%
+Troy       → 1%
+```
+
+---
+
+## Without Strategy Pattern
+
+```csharp
 public decimal CalculateCommission(
     string cardType,
     decimal amount)
@@ -39,14 +41,17 @@ public decimal CalculateCommission(
     }
 
     throw new NotSupportedException(
-        $"Desteklenmeyen kart tipi: {cardType}");
+        $"Unsupported card type: {cardType}");
 }
 ```
+
 ```diff
-@@ Bu kod çalışır. Fakat yeni bir kart türü geldiğinde bu metodu değiştirmek zorundayız: @@
+@@ This code works, but every time a new commission algorithm is introduced, we must modify the existing method. @@
 ```
 
-```c#
+For example:
+
+```csharp
 if (cardType == "Amex")
 {
     return amount * 0.04m;
@@ -54,30 +59,27 @@ if (cardType == "Amex")
 ```
 
 ```diff
-@@ Her yeni algoritmada mevcut kodu değiştiriyoruz. Bu durum Open/Closed Principle açısından iyi değildir. @@
+@@ This is not ideal from an Open/Closed Principle perspective. @@
 ```
-__________________________________________
+
+---
+
+## Strategy Pattern Solution
 
 ```diff
-@@ Strategy çözümü @@
-@@ İlk olarak bütün komisyon algoritmalarının uyacağı ortak bir interface oluştururuz: @@
+@@ First, we define a common contract for all commission algorithms. @@
 ```
 
-```c#
+```csharp
 public interface ICommissionStrategy
 {
     decimal Calculate(decimal amount);
 }
 ```
 
-```diff
-@@ Bu interface şunu söyler: @@
-@@ Her komisyon stratejisinin Calculate metodu olmak zorundadır. @@
-```
-```diff
-@@ Visa algoritması @@
-```
-```c#
+### Visa Strategy
+
+```csharp
 public sealed class VisaCommissionStrategy : ICommissionStrategy
 {
     public decimal Calculate(decimal amount)
@@ -86,10 +88,10 @@ public sealed class VisaCommissionStrategy : ICommissionStrategy
     }
 }
 ```
-```diff
-@@ MasterCard algoritması @@
-```
-```c#
+
+### MasterCard Strategy
+
+```csharp
 public sealed class MasterCardCommissionStrategy : ICommissionStrategy
 {
     public decimal Calculate(decimal amount)
@@ -98,10 +100,10 @@ public sealed class MasterCardCommissionStrategy : ICommissionStrategy
     }
 }
 ```
-```diff
-@@ Troy algoritması @@
-```
-```c#
+
+### Troy Strategy
+
+```csharp
 public sealed class TroyCommissionStrategy : ICommissionStrategy
 {
     public decimal Calculate(decimal amount)
@@ -110,17 +112,22 @@ public sealed class TroyCommissionStrategy : ICommissionStrategy
     }
 }
 ```
-```diff
-@@ Artık her hesaplama algoritması ayrı bir sınıfta bulunuyor. @@
-```
-__________________________________________
 
 ```diff
-@@ Context sınıfı @@
-=> @@ Strategy Pattern’de algoritmayı kullanan sınıfa genellikle "Context" denir. @@
-@@ Bizim örneğimizde bu sınıf CommissionCalculator: @@
+@@ Now each algorithm is isolated in its own class. @@
 ```
-```c#
+
+---
+
+## Context
+
+```diff
+@@ In the Strategy Pattern, the class that uses a strategy is usually called the Context. @@
+```
+
+In this example, the context is `CommissionCalculator`.
+
+```csharp
 public sealed class CommissionCalculator
 {
     private readonly ICommissionStrategy _commissionStrategy;
@@ -134,196 +141,293 @@ public sealed class CommissionCalculator
     {
         if (amount <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(amount),"Tutar sıfırdan büyük olmalıdır.");
+            throw new ArgumentOutOfRangeException(
+                nameof(amount),
+                "Amount must be greater than zero.");
         }
 
         return _commissionStrategy.Calculate(amount);
     }
 }
 ```
-```diff
-@@ Buradaki önemli nokta: @@
-```
-```c#
-private readonly ICommissionStrategy _commissionStrategy;
-```
-```diff
-- CommissionCalculator, Visa veya MasterCard sınıfını doğrudan bilmiyor.
 
-- Sadece şu interface’i biliyor:
+```diff
+@@ The important point is that CommissionCalculator does not know about Visa, MasterCard, or Troy directly. @@
+
+@@ It only depends on the abstraction: @@
 ```
-```c#
+
+```csharp
 ICommissionStrategy
 ```
 
-```diff
-@@ Ve hesaplama yaparken: @@
-```
-```c#
-_commissionStrategy.Calculate(amount);
+When calculation is required:
+
+```csharp
+return _commissionStrategy.Calculate(amount);
 ```
 
 ```diff
-@@ diyor. Hesabın nasıl yapıldığını bilmiyor. O işi kendisine verilen strategy yapıyor. @@
-```
-```diff
-@@ Kullanımı @@
-@@ Visa için @@
+@@ The Context does not know how the calculation is performed. @@
+
+@@ The selected Strategy contains that algorithm. @@
 ```
 
-```c#
-ICommissionStrategy strategy = new VisaCommissionStrategy();
+---
 
-var calculator = new CommissionCalculator(strategy);
+## Usage
+
+### Visa
+
+```csharp
+ICommissionStrategy strategy =
+    new VisaCommissionStrategy();
+
+var calculator =
+    new CommissionCalculator(strategy);
 
 decimal commission = calculator.Calculate(1000);
 
 Console.WriteLine(commission); // 20
 ```
-```diff
-@@ Akış: @@
-```
-```
+
+Flow:
+
+```text
 CommissionCalculator.Calculate(1000)
                 ↓
 VisaCommissionStrategy.Calculate(1000)
                 ↓
                20
 ```
-```diff
-@@ MasterCard için @@
-```
 
-```c#
-ICommissionStrategy strategy = new MasterCardCommissionStrategy();
+### MasterCard
 
-var calculator = new CommissionCalculator(strategy);
+```csharp
+ICommissionStrategy strategy =
+    new MasterCardCommissionStrategy();
+
+var calculator =
+    new CommissionCalculator(strategy);
 
 decimal commission = calculator.Calculate(1000);
 
 Console.WriteLine(commission); // 30
-
 ```
 
 ```diff
-@@ Burada CommissionCalculator değişmedi. @@
-@@ Sadece verdiğimiz strategy değişti @@
+@@ CommissionCalculator did not change. @@
+
+@@ We only changed the Strategy that was passed to it. @@
 ```
-```c#
+
+```csharp
 new VisaCommissionStrategy()
 ```
-```diff
-@@ yerine @@
-```
-```c#
+
+becomes:
+
+```csharp
 new MasterCardCommissionStrategy()
 ```
-```diff
-@@ verdik. Strategy Pattern’in ana mantığı tam olarak budur.@@
-```
+
+> **This is the core idea of the Strategy Pattern: the algorithm can be replaced without changing the class that uses it.**
+
+---
+
+## Main Components
 
 ```diff
-@@ Strategy’nin parçaları @@
-@@ Örneğimizde dört ana parça vardır: @@
-
-@@ 1.) Strategy interface @@
-@@ Bütün algoritmaların sözleşmesi: @@
+@@ Strategy Pattern usually contains four important parts. @@
 ```
-```c#
+
+### 1. Strategy
+
+The common contract for all algorithms.
+
+```csharp
 ICommissionStrategy
 ```
-```diff
-@@ 2.) Concrete Strategy @@
-@@ Gerçek algoritmalar: @@
-```
-```c#
+
+### 2. Concrete Strategies
+
+The actual algorithms.
+
+```csharp
 VisaCommissionStrategy
 MasterCardCommissionStrategy
 TroyCommissionStrategy
 ```
-```diff
-@@ 3.) Context @@
-@@ Algoritmayı kullanan sınıf: @@
-```
-```c#
+
+### 3. Context
+
+The class that uses the selected algorithm.
+
+```csharp
 CommissionCalculator
 ```
-```diff
-@@ 4.) Client @@
-@@ Hangi strategy’nin kullanılacağını seçen taraf: @@
-```
-```c#
-new CommissionCalculator(new VisaCommissionStrategy());
+
+### 4. Client
+
+The code that decides which Strategy should be used.
+
+```csharp
+new CommissionCalculator(
+    new VisaCommissionStrategy());
 ```
 
+---
+
+## Does Strategy Eliminate `switch` Completely?
+
 ```diff
-@@ Strategy switch’i tamamen yok eder mi? @@
-Her zaman değil.
-Bir yerde kart tipine göre strategy seçmemiz gerekebilir:
+@@ Not necessarily. @@
 ```
-```c#
+
+We may still need to select the appropriate Strategy based on some runtime value.
+
+```csharp
 ICommissionStrategy strategy = cardType switch
 {
-    CardType.Visa => new VisaCommissionStrategy(),
-    CardType.MasterCard => new MasterCardCommissionStrategy(),
-    CardType.Troy => new TroyCommissionStrategy(),
-    _ => throw new NotSupportedException()
+    CardType.Visa =>
+        new VisaCommissionStrategy(),
+
+    CardType.MasterCard =>
+        new MasterCardCommissionStrategy(),
+
+    CardType.Troy =>
+        new TroyCommissionStrategy(),
+
+    _ =>
+        throw new NotSupportedException()
 };
 ```
-```diff
-Buradaki fark şudur:
 
-Eskiden bütün iş kuralları tek switch içindeydi:
+The important difference is that the `switch` no longer contains the business algorithms.
 
+Before:
+
+```csharp
 return amount * 0.02m;
 return amount * 0.03m;
 return amount * 0.01m;
-
-Şimdi switch yalnızca doğru strategy’yi seçiyor. Algoritmalar ayrı sınıflarda bulunuyor.
-
-Bu seçim işlemi daha sonra Factory veya Dependency Injection ile de yapılabilir.
 ```
-__________________________________________
-```diff
-@@ Factory ile farkı @@
 
-Strategy:
+After:
 
-Hesaplama nasıl yapılacak?
-
-Visa komisyon algoritması
-MasterCard komisyon algoritması
-Troy komisyon algoritması
-
-Factory:
-
-Hangi strategy oluşturulacak veya seçilecek?
-
-Kart Visa ise VisaCommissionStrategy seç.
-Kart Troy ise TroyCommissionStrategy seç.
-
-Kısaca:
-
-Factory seçer.
-Strategy işi yapar.
+```text
+switch
+   ↓
+Select Strategy
+   ↓
+Strategy executes the algorithm
 ```
-__________________________________________
+
+The Strategy selection itself can later be handled by:
+
+```text
+Factory
+Dependency Injection
+Dictionary / Lookup
+Resolver
+```
+
+---
+
+## Strategy vs Factory
+
 ```diff
-@@ Decorator ile farkı @@
+@@ Strategy @@
 
-Strategy, mevcut davranışlardan birini seçer:
+> How should this operation be performed?
 
-Visa veya MasterCard veya Troy
+Examples:
 
-Decorator, mevcut davranışın çevresine ek davranış koyar:
+Visa commission algorithm
+MasterCard commission algorithm
+Troy commission algorithm
 
+
+@@ Factory @@
+
+> Which implementation should be created or selected?
+
+Example:
+
+Visa → VisaCommissionStrategy
+Troy → TroyCommissionStrategy
+```
+
+The short version:
+
+```text
+Factory  → selects / creates
+
+Strategy → executes the behavior
+```
+
+---
+
+## Strategy vs Decorator
+
+### Strategy
+
+Selects one behavior from multiple alternatives.
+
+```text
+Visa
+ OR
+MasterCard
+ OR
+Troy
+```
+
+### Decorator
+
+Adds additional behavior around an existing object.
+
+```text
 Logging
    ↓
 Retry
    ↓
+Authorization
+   ↓
 PaymentService
+```
 
-Strategy’de çoğunlukla alternatiflerden biri çalışır.
+```diff
+@@ Strategy usually chooses between alternative algorithms. @@
 
-Decorator’da davranışlar katmanlar halinde birlikte çalışabilir.
+@@ Decorator usually combines additional behaviors in layers. @@
+```
+
+---
+
+## Summary
+
+```text
+Client
+   ↓
+Select Strategy
+   ↓
+Context
+   ↓
+ICommissionStrategy
+   ↓
+Concrete Strategy
+   ↓
+Execute Algorithm
+```
+
+> **Strategy Pattern defines a family of interchangeable algorithms, places each algorithm in a separate class, and allows the algorithm to be selected at runtime.**
+
+For interviews, remember:
+
+```text
+Strategy → How should the behavior be performed?
+
+Factory  → Which implementation should be selected?
+
+Decorator → What additional behavior should wrap the object?
 ```
