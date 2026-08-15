@@ -1,56 +1,55 @@
-# DesignPatterns
+# Design Patterns
 
 ```diff
-@@ Chain of Responsibility (CoR) @@
+@@ Chain of Responsibility (CoR) Pattern @@
 
-Bu pattern'i anlarsan şunları da anlarsın:
+Chain of Responsibility is an important pattern for understanding
+pipeline-based architectures.
 
-✅ ASP.NET Core Middleware
-✅ MediatR Pipeline Behavior
-✅ Authentication Pipeline
-✅ Authorization Pipeline
-✅ Exception Middleware
-✅ Validation Pipeline
-✅ HTTP Pipeline
-✅ ATM işlem akışları
+You will encounter similar concepts in:
 
-Bu yüzden mülakatlarda çok sorulur.
++ ASP.NET Core Middleware
++ MediatR Pipeline Behaviors
++ Authentication / Authorization Pipelines
++ Exception Handling
++ Validation Pipelines
++ HTTP Processing Pipelines
++ Banking and ATM Transaction Flows
 ```
-__________________________________________
+
+---
+
+# Understanding the Problem
 
 ```diff
-@@ Önce problemi anlayalım @@
+@@ Suppose an ATM receives a withdrawal request. @@
 
-ATM'de para çekme isteği geldi.
-
-İşlem başlamadan önce sırayla şunlar çalışıyor.
-```
-```
-Kart Takıldı
-↓
-Kart Geçerli mi?
-↓
-PIN Doğru mu?
-↓
-Kart Blokeli mi?
-↓
-Günlük Limit
-↓
-Bakiye
-↓
-Fraud Kontrolü
-↓
-ATM'de Para Var mı?
-↓
-Para Ver
-
+Before dispensing cash, several checks must be performed.
 ```
 
-```diff
-@@ Şimdi bunu tek method yazsak @@
+```text
+Card Inserted
+     ↓
+Validate Card
+     ↓
+Validate PIN
+     ↓
+Check Card Status
+     ↓
+Check Daily Limit
+     ↓
+Check Balance
+     ↓
+Fraud Check
+     ↓
+Check ATM Cash
+     ↓
+Dispense Cash
 ```
 
-```c#
+Without Chain of Responsibility, we might write:
+
+```csharp
 public void Withdraw()
 {
     ValidateCard();
@@ -70,70 +69,96 @@ public void Withdraw()
 ```
 
 ```diff
-Çalışır. Ama problem şu.
-
-Yarın diyorlar ki
-
-- AML kontrolü de gelsin.
-
-Kod değişti.
-
-Sonra
-
-- Blacklist kontrolü.
-
-Kod yine değişti.
-
-Sonra
-
-- QR Withdraw ise PIN kontrolünü atla.
-
-Kod yine değişti.
-
-Method büyümeye başladı.
+@@ This works, but the method becomes harder to maintain as requirements grow. @@
 ```
-__________________________________________
-```c#
+
+Tomorrow:
+
+```text
+Add AML Check
+```
+
+The method changes.
+
+Then:
+
+```text
+Add Blacklist Check
+```
+
+The method changes again.
+
+Then:
+
+```text
+Skip PIN validation for QR withdrawals
+```
+
+Again, the same method must be modified.
+
+Eventually:
+
+```text
+Withdraw()
+
+ValidateCard()
+ValidatePin()
+CheckBlacklist()
+CheckAML()
+CheckLimit()
+CheckBalance()
+CheckFraud()
+CheckCash()
+...
 ```
 
 ```diff
-@@ Chain ne diyor? @@
-
-Her kontrol
-
-ayrı sınıf olsun.
+@@ The transaction flow becomes tightly coupled to one large method. @@
 ```
 
+---
+
+# Chain of Responsibility Solution
+
+```diff
+@@ Chain of Responsibility separates each processing step into its own Handler. @@
 ```
+
+Instead of one large method:
+
+```text
 CardValidationHandler
-↓
+        ↓
 PinValidationHandler
-↓
+        ↓
 LimitHandler
-↓
+        ↓
 BalanceHandler
-↓
+        ↓
 FraudHandler
-↓
+        ↓
 CashHandler
-↓
+        ↓
 WithdrawHandler
 ```
 
-```diff
-Her biri
+Each Handler:
 
-işini yapacak.
+```text
+1. Performs its own responsibility.
 
-Sonra
+2. Decides whether the request should continue.
 
-bir sonrakine geçecek.
+3. Passes the request to the next Handler if appropriate.
 ```
-__________________________________________
-```diff
-@@ Önce Request @@
-```
-```c#
+
+---
+
+# Request
+
+First, let's define the request that moves through the chain.
+
+```csharp
 public class WithdrawRequest
 {
     public string CardNumber { get; set; }
@@ -145,12 +170,26 @@ public class WithdrawRequest
     public decimal Balance { get; set; }
 }
 ```
-__________________________________________
-```diff
-@@ Handler Interface @@
+
+The same request travels through the entire pipeline:
+
+```text
+WithdrawRequest
+      ↓
+Card Handler
+      ↓
+PIN Handler
+      ↓
+Balance Handler
+      ↓
+Cash Handler
 ```
 
-```c#
+---
+
+# Handler Interface
+
+```csharp
 public interface IHandler
 {
     void SetNext(IHandler handler);
@@ -159,23 +198,31 @@ public interface IHandler
 }
 ```
 
-```diff
-@@ Burada iki metod var. @@
+There are two important operations:
 
+```text
 SetNext()
+   ↓
+Defines the next Handler
+
 
 Handle()
+   ↓
+Processes the request
 ```
-__________________________________________
+
+---
+
+# Base Handler
 
 ```diff
-@@ Base Handler @@
-Her handler aynı kodu yazmasın.
+@@ We can create a Base Handler to avoid repeating chain-management logic in every Handler. @@
 ```
-```c#
+
+```csharp
 public abstract class Handler : IHandler
 {
-    private IHandler _next;
+    private IHandler? _next;
 
     public void SetNext(IHandler handler)
     {
@@ -186,121 +233,179 @@ public abstract class Handler : IHandler
     {
         _next?.Handle(request);
     }
+}
+```
 
-```
-```diff
-@@ Bak burada en önemli satır @@
-```
-```c#
+The most important line is:
+
+```csharp
 _next?.Handle(request);
 ```
-```c#
-Bu zinciri devam ettiriyor.
-```
-__________________________________________
-```diff
-@@ Card Handler @@
+
+This means:
+
+```text
+Current Handler
+      ↓
+Finish current responsibility
+      ↓
+Call next Handler
 ```
 
-```c#
+That line keeps the chain moving.
+
+---
+
+# Card Validation Handler
+
+```csharp
 public class CardValidationHandler : Handler
 {
     public override void Handle(WithdrawRequest request)
     {
-        Console.WriteLine("Kart doğrulandı.");
+        Console.WriteLine("Card validated.");
 
         base.Handle(request);
     }
 }
 ```
 
-> Bak işini yaptı. Sonra
+The Handler first performs its own responsibility:
 
-```c#
+```csharp
+Console.WriteLine("Card validated.");
+```
+
+Then:
+
+```csharp
 base.Handle(request);
 ```
 
-> dedi. Yani zincirin devamı.
-__________________________________________
-```diff
-@@  @@
-```
-```c#
-```
-__________________________________________
-```diff
-@@ PIN Handler @@
+passes the request to the next Handler.
+
+```text
+CardValidationHandler
+        ↓
+Card Valid
+        ↓
+base.Handle()
+        ↓
+Next Handler
 ```
 
-```c#
+---
+
+# PIN Validation Handler
+
+```csharp
 public class PinValidationHandler : Handler
 {
     public override void Handle(WithdrawRequest request)
     {
-        Console.WriteLine("PIN doğrulandı.");
+        Console.WriteLine("PIN validated.");
 
         base.Handle(request);
     }
 }
 ```
-__________________________________________
-```diff
-@@ Balance Handler @@
+
+Again:
+
+```text
+Validate PIN
+     ↓
+Continue Chain
 ```
 
-```c#
+---
+
+# Balance Handler
+
+This Handler demonstrates one of the most important characteristics of Chain of Responsibility.
+
+```csharp
 public class BalanceHandler : Handler
 {
     public override void Handle(WithdrawRequest request)
     {
-        if(request.Balance < request.Amount)
+        if (request.Balance < request.Amount)
         {
-            Console.WriteLine("Yetersiz bakiye.");
+            Console.WriteLine("Insufficient balance.");
 
             return;
         }
 
-        Console.WriteLine("Bakiye uygun.");
+        Console.WriteLine("Balance is sufficient.");
 
         base.Handle(request);
     }
 }
 ```
 
-```diff
-@@ Bak burada @@
-```
+Notice:
 
-```c#
+```csharp
 return;
 ```
-dedi.
 
-> Ne oldu? Zincir bitti. Sonraki handler çalışmadı. 
+There is no:
 
-> Bu çok önemli.
-__________________________________________
-```diff
-@@ Cash Handler @@
+```csharp
+base.Handle(request);
 ```
 
-```c#
+after an insufficient balance is detected.
+
+Therefore:
+
+```text
+BalanceHandler
+      ↓
+Insufficient Balance
+      ↓
+return
+      ↓
+STOP
+```
+
+The next Handler is never called.
+
+This ability to **short-circuit the chain** is an important characteristic of the pattern.
+
+---
+
+# Cash Handler
+
+```csharp
 public class CashHandler : Handler
 {
     public override void Handle(WithdrawRequest request)
     {
-        Console.WriteLine("ATM parayı verdi.");
+        Console.WriteLine("ATM dispensed the cash.");
 
         base.Handle(request);
     }
 }
 ```
-__________________________________________
-```diff
-@@ Zinciri kuruyoruz @@
+
+In this example, this is effectively the final business Handler.
+
+Because there is no Handler after it:
+
+```csharp
+_next?.Handle(request);
 ```
 
-```c#
+does nothing.
+
+---
+
+# Building the Chain
+
+Now we create the Handlers:
+
+```csharp
 var card = new CardValidationHandler();
 
 var pin = new PinValidationHandler();
@@ -308,7 +413,11 @@ var pin = new PinValidationHandler();
 var balance = new BalanceHandler();
 
 var cash = new CashHandler();
+```
 
+Then connect them:
+
+```csharp
 card.SetNext(pin);
 
 pin.SetNext(balance);
@@ -316,400 +425,894 @@ pin.SetNext(balance);
 balance.SetNext(cash);
 ```
 
-```diff
-@@ Bak oluşan zincir @@
-```
+The resulting chain is:
 
-```c#
+```text
 Card
-↓
-Pin
-↓
+ ↓
+PIN
+ ↓
 Balance
-↓
+ ↓
 Cash
-
-```
-__________________________________________
-```diff
-@@ Çalıştırıyoruz @@
 ```
 
-```c#
+---
+
+# Executing the Chain
+
+We only call the **first Handler**:
+
+```csharp
 card.Handle(request);
 ```
-Sadece
 
-ilk handler'ı çağırıyoruz.
+We do NOT write:
 
-Gerisini
-
-handler'lar birbirini çağırıyor.
-
-__________________________________________
-```diff
-@@ Çalışma sırası @@
+```csharp
+card.Handle(request);
+pin.Handle(request);
+balance.Handle(request);
+cash.Handle(request);
 ```
 
-```c#
+Each Handler is responsible for forwarding the request.
+
+```text
+Client
+  ↓
+Card.Handle()
+  ↓
+PIN.Handle()
+  ↓
+Balance.Handle()
+  ↓
+Cash.Handle()
+```
+
+---
+
+# Short-Circuiting the Chain
+
+Suppose the requested amount is:
+
+```text
+Amount  = 1000
+Balance = 500
+```
+
+Execution becomes:
+
+```text
 Card
-↓
-Pin
-↓
+ ↓
+PASS
+ ↓
+PIN
+ ↓
+PASS
+ ↓
 Balance
-↓
-Cash
-```
-```diff
-@@ Eğer bakiye yetersizse @@
-Balance Handler
+ ↓
+FAIL
+ ↓
+STOP
 ```
 
-```c#
-return;
-```
-```diff
-@@ dedi. Şimdi Cash Handler çalışır mı? Hayır. Zincir orada biter. @@
-```
+`CashHandler` never executes.
 
-__________________________________________
-```diff
-@@ İşte CoR'nin mantığı @@
-Her handler
+Why?
 
-şunu der.
+Because `BalanceHandler` does not call:
+
+```csharp
+base.Handle(request);
 ```
 
-```
-Benim işim buysa yaparım.
+when validation fails.
 
-Sonra devam ederim.
+---
 
-İşlem burada bitecekse
-devam ettirmem.
-```
-__________________________________________
+# Core Idea
 
 ```diff
-@@ ASP.NET Core Middleware @@
-Şimdi en önemli yer.
-
-ASP.NET Core'da
+@@ Every Handler essentially says: @@
 ```
 
-```c#
+```text
+"I will perform my responsibility."
+
+            ↓
+
+"Should processing continue?"
+
+       ↙           ↘
+
+     YES            NO
+      ↓              ↓
+ Next Handler       STOP
+```
+
+> **Chain of Responsibility passes a request through a sequence of Handlers. Each Handler can process the request and decide whether processing should continue to the next Handler.**
+
+---
+
+# ASP.NET Core Middleware
+
+One of the most important real-world examples of this concept is the ASP.NET Core middleware pipeline.
+
+A typical pipeline may look like:
+
+```csharp
+app.UseExceptionHandler("/error");
+
+app.UseRouting();
+
 app.UseAuthentication();
 
 app.UseAuthorization();
 
-app.UseExceptionHandler();
-
-app.UseRouting();
-
-app.UseEndpoints();
-```
-```diff
-@@ Bu ne? Aslında @@
+app.MapControllers();
 ```
 
-```c#
-Middleware1
-↓
-Middleware2
-↓
-Middleware3
-↓
-Middleware4
-```
-```diff
-@@ Her middleware @@
+Conceptually:
+
+```text
+Request
+   ↓
+Exception Handling
+   ↓
+Routing
+   ↓
+Authentication
+   ↓
+Authorization
+   ↓
+Endpoint
 ```
 
-```c#
+A custom middleware typically contains:
+
+```csharp
 await next(context);
 ```
-```diff
-@@ diyor.Bu şunun aynısı. @@
-```
 
-```c#
+Conceptually, this is similar to:
+
+```csharp
 base.Handle(request);
 ```
-__________________________________________
-```diff
-@@ Mesela Authentication başarısız. @@
+
+in our Handler example.
+
+Both mean:
+
+```text
+Continue processing
+        ↓
+Call the next component
 ```
 
-```c#
-Authentication
-↓
-401 dön
-↓
-Pipeline biter
-```
-```diff
-@@ Authorization çalışmaz.Bu Chain of Responsibility'dir. @@
-```
-__________________________________________
-```diff
-@@ MediatR Pipeline @@
-Sen bunu çok kullandın.
+---
 
+# Middleware Short-Circuiting
+
+A middleware does not have to call `next`.
+
+For example:
+
+```csharp
+if (!IsAllowed(context))
+{
+    context.Response.StatusCode =
+        StatusCodes.Status403Forbidden;
+
+    return;
+}
+
+await next(context);
 ```
-```c#
+
+If the request is not allowed:
+
+```text
+Current Middleware
+       ↓
+403 Forbidden
+       ↓
+return
+       ↓
+Pipeline Stops
+```
+
+The downstream middleware and endpoint are not executed.
+
+```diff
+@@ This short-circuiting behavior is one of the reasons middleware pipelines are often explained using Chain of Responsibility. @@
+```
+
+> ASP.NET Core middleware is not a textbook implementation of the GoF Chain of Responsibility pattern, but it strongly applies the same request-pipeline and short-circuiting concepts.
+
+---
+
+# An Important Middleware Detail
+
+Middleware can also execute logic **after** the next component finishes.
+
+```csharp
+Console.WriteLine("Before");
+
+await next(context);
+
+Console.WriteLine("After");
+```
+
+Suppose we have:
+
+```text
+Middleware A
+Middleware B
+Controller
+```
+
+Execution becomes:
+
+```text
+A Before
+   ↓
+B Before
+   ↓
+Controller
+   ↓
+B After
+   ↓
+A After
+```
+
+This gives ASP.NET Core middleware both:
+
+```text
+Chain of Responsibility characteristics
+
++
+
+Decorator / nested pipeline characteristics
+```
+
+This distinction is useful in interviews.
+
+---
+
+# MediatR Pipeline Behaviors
+
+MediatR pipeline behaviors use a similar pipeline concept.
+
+For example:
+
+```text
+Request
+   ↓
 Logging
-↓
+   ↓
 Validation
-↓
+   ↓
 Performance
-↓
+   ↓
 Transaction
-↓
+   ↓
 Handler
 ```
-```diff
-@@ Her Behavior @@
-```
 
-```c#
+A behavior typically calls:
+
+```csharp
 await next();
 ```
 
-der.Bu tam olarak Chain of Responsibility.
+which delegates execution to the next behavior.
 
-__________________________________________
-```diff
-@@ Exception Middleware @@
+Conceptually:
+
+```text
+LoggingBehavior
+      ↓
+ValidationBehavior
+      ↓
+TransactionBehavior
+      ↓
+RequestHandler
 ```
 
-```c#
+Again, MediatR pipeline behaviors can also execute code both before and after `next()`, so they are often described as having both **Decorator** and **Chain of Responsibility-like** characteristics.
+
+---
+
+# Exception Middleware
+
+Suppose the pipeline is:
+
+```text
 Exception Middleware
-↓
+        ↓
 Authentication
-↓
+        ↓
 Authorization
-↓
+        ↓
 Controller
 ```
-Controller exception attı. Exception Middleware yakaladı.
 
-Pipeline orada bitti.
+The exception middleware can execute:
 
-__________________________________________
-```diff
-@@ Microservice örneği @@
-API Gateway
+```csharp
+try
+{
+    await next(context);
+}
+catch (Exception ex)
+{
+    // Handle exception
+}
 ```
 
-```c#
-JWT
-↓
-Rate Limit
-↓
-IP Filter
-↓
+The request moves down:
+
+```text
+Exception Middleware
+        ↓
+Authentication
+        ↓
+Authorization
+        ↓
+Controller
+```
+
+If the Controller throws an exception:
+
+```text
+Controller
+   ↓
+Exception
+   ↑
+Authorization
+   ↑
+Authentication
+   ↑
+Exception Middleware
+   ↓
+Handle Exception
+```
+
+This is why exception middleware is generally registered early in the pipeline: it needs to wrap downstream processing.
+
+---
+
+# API Gateway / Microservice Example
+
+The same pipeline concept can appear at an API Gateway:
+
+```text
+Incoming Request
+       ↓
+JWT Validation
+       ↓
+Rate Limiting
+       ↓
+IP Filtering
+       ↓
+Request Validation
+       ↓
 Routing
-↓
+       ↓
 Microservice
 ```
-__________________________________________
 
-> Avantajları
+Any component may reject the request:
 
-✅ Handler'lar birbirinden bağımsızdır.
+```text
+JWT Validation
+      ↓
+Invalid Token
+      ↓
+401
+      ↓
+STOP
+```
 
-✅ Yeni handler eklemek kolaydır.
+or:
 
-✅ Handler sırası değişebilir.
+```text
+Rate Limiting
+      ↓
+Limit Exceeded
+      ↓
+429
+      ↓
+STOP
+```
 
-✅ Her handler tek sorumluluk taşır.
-__________________________________________
+---
 
-> Dezavantaj
+# ATM Example
 
-Handler sırası yanlış olursa
+A more realistic ATM transaction chain could look like:
 
-bug bulmak zor olabilir.
+```text
+WithdrawRequest
+      ↓
+CardValidationHandler
+      ↓
+PinValidationHandler
+      ↓
+CardStatusHandler
+      ↓
+DailyLimitHandler
+      ↓
+BalanceHandler
+      ↓
+FraudHandler
+      ↓
+CashAvailabilityHandler
+      ↓
+DispenseHandler
+      ↓
+JournalHandler
+```
 
-Mesela
+If Fraud detects a problem:
 
-Cash
-↓
+```text
+FraudHandler
+     ↓
+Transaction Rejected
+     ↓
+STOP
+```
+
+Therefore:
+
+```text
+CashAvailabilityHandler
+DispenseHandler
+JournalHandler
+```
+
+are not executed in the normal downstream flow.
+
+---
+
+# Advantages
+
+```diff
+@@ Advantages @@
+
++ Handlers are loosely coupled.
+
++ Each Handler can have a single responsibility.
+
++ New Handlers can be added without rewriting one large processing method.
+
++ Handler order can be changed.
+
++ Processing can be stopped at any point.
+
++ Individual Handlers are easier to test.
+
++ Complex processing pipelines become easier to compose.
+```
+
+---
+
+# Disadvantages
+
+```diff
+@@ Disadvantages @@
+
+- Handler order can become critical.
+
+- Incorrect ordering may introduce difficult bugs.
+
+- Long chains can be harder to debug.
+
+- It may not always be obvious which Handler stopped the request.
+
+- The request is not guaranteed to reach the end of the chain.
+```
+
+For example, this order would be dangerous:
+
+```text
+CashHandler
+     ↓
+BalanceHandler
+```
+
+because cash would be dispensed before checking the balance.
+
+The correct order is:
+
+```text
+BalanceHandler
+     ↓
+CashHandler
+```
+
+---
+
+# Chain of Responsibility vs Strategy
+
+### Strategy
+
+Chooses one algorithm from multiple alternatives.
+
+```text
+Commission Calculation
+        ↓
+   ┌────┼────┐
+   ↓    ↓    ↓
+ Visa Master Troy
+```
+
+Usually:
+
+```text
+Visa OR MasterCard OR Troy
+```
+
+### Chain of Responsibility
+
+Passes a request through multiple processing steps.
+
+```text
+Card
+ ↓
+PIN
+ ↓
 Balance
-
-olursa para verdikten sonra bakiyeye bakmış olursun.
-
-```c#
-@@ Strategy ile fark @@
-
-Strategy
-
-bir algoritma seçer.
-
-Visa
-
-veya
-
-Master
-
-Chain
-
-hepsini sırayla çalıştırır.
-
-@@ Observer ile fark @@
-
-Observer
-
-Bir olay oldu
-
-↓
-
-Herkes haberdar olsun
-
-Chain
-
-Bir istek geldi
-
-↓
-
-Sırayla kontrol et
-@@ Command ile fark @@
-
-Command
-
-bir işi temsil eder.
-
-Chain
-
-o işi işleyen handler zinciridir.
-
-Mesela
-
-WithdrawCommand
-↓
-Validation
-↓
+ ↓
 Fraud
-↓
+ ↓
 Cash
-↓
+```
+
+The short version:
+
+```text
+Strategy
+   ↓
+Which algorithm should perform the job?
+
+
+Chain of Responsibility
+   ↓
+Which handlers should process the request,
+and how far should it travel through the chain?
+```
+
+---
+
+# Chain of Responsibility vs Observer
+
+### Observer
+
+One event occurs and multiple subscribers are notified.
+
+```text
+OrderCreated
+      ↓
+ ┌────┼─────┐
+ ↓    ↓     ↓
+Email SMS Analytics
+```
+
+### Chain of Responsibility
+
+One request travels through handlers sequentially.
+
+```text
+Request
+   ↓
+Handler A
+   ↓
+Handler B
+   ↓
+Handler C
+```
+
+So:
+
+```text
+Observer
+   ↓
+Broadcast / notification
+
+
+Chain
+   ↓
+Sequential processing
+```
+
+---
+
+# Chain of Responsibility vs Command
+
+### Command
+
+Represents an action or request as an object.
+
+```text
+WithdrawCommand
+```
+
+For example:
+
+```csharp
+public class WithdrawCommand
+{
+    public decimal Amount { get; set; }
+}
+```
+
+### Chain of Responsibility
+
+Defines how that request moves through processing steps.
+
+```text
+WithdrawCommand
+      ↓
+Validation
+      ↓
+Fraud
+      ↓
+Balance
+      ↓
+Cash
+      ↓
 Journal
+```
 
-@@ Decorator ile fark @@
+Therefore:
 
-Bu çok sorulur.
+```text
+Command
+   ↓
+"What operation should be executed?"
+
+
+Chain
+   ↓
+"Which processing steps should handle it?"
+```
+
+They can be used together.
+
+---
+
+# Chain of Responsibility vs Decorator
+
+This is an important interview comparison.
+
+### Decorator
+
+Adds behavior around another object.
+
+```text
+Logging
+   ↓
+Retry
+   ↓
+Authorization
+   ↓
+PaymentService
+```
+
+The main goal is:
+
+```text
+Extend behavior without modifying
+the original object.
+```
+
+### Chain of Responsibility
+
+Passes a request through a sequence of handlers.
+
+```text
+Validation
+    ↓
+Fraud
+    ↓
+Limit
+    ↓
+Balance
+```
+
+A Handler can decide:
+
+```text
+STOP
+```
+
+and prevent downstream processing.
+
+The main goal is:
+
+```text
+Pass a request through a processing chain
+while reducing coupling between the sender
+and individual handlers.
+```
+
+---
+
+# Interview Summary
+
+```diff
+@@ Chain of Responsibility @@
+```
+
+```text
+Request
+   ↓
+Handler A
+   ↓
+Handler B
+   ↓
+Handler C
+   ↓
+Handler D
+```
+
+Each Handler:
+
+```text
+Receive Request
+      ↓
+Perform Responsibility
+      ↓
+Continue?
+   ↙      ↘
+ YES      NO
+  ↓        ↓
+Next      STOP
+```
+
+> **Chain of Responsibility Pattern passes a request through a chain of handlers. Each handler can process the request and decide whether to pass it to the next handler or stop further processing.**
+
+For interviews, remember these four concepts:
+
+```text
+1. Handler
+
+2. Next Handler
+
+3. Request Pipeline
+
+4. Short-Circuit
+```
+
+And remember the ASP.NET Core connection:
+
+```text
+Handler               → Middleware
+
+Handle(request)        → InvokeAsync(context)
+
+base.Handle(request)   → await next(context)
+
+return                 → Short-circuit
+```
+
+---
+
+# Interview Questions
+
+### Question 1
+
+What is the primary purpose of the Chain of Responsibility Pattern?
+
+**A)** Change an algorithm at runtime
+
+**B)** Pass a request through a sequence of handlers
+
+**C)** Create objects
+
+**D)** Convert one interface into another
+
+**✅ Answer: B**
+
+---
+
+### Question 2
+
+When can a Chain of Responsibility stop processing?
+
+**A)** Immediately after the first Handler
+
+**B)** Only after the last Handler
+
+**C)** When a Handler decides not to forward the request
+
+**D)** Every Handler must always execute
+
+**✅ Answer: C**
+
+---
+
+### Question 3
+
+Which ASP.NET Core concept strongly resembles Chain of Responsibility?
+
+**A)** Dependency Injection
+
+**B)** Middleware Pipeline
+
+**C)** AutoMapper
+
+**D)** Entity Framework Core
+
+**✅ Answer: B**
+
+---
+
+### Question 4
+
+What does `await next(context)` conceptually mean inside middleware?
+
+**A)** Create a new object
+
+**B)** Invoke the next component in the pipeline
+
+**C)** Publish an event
+
+**D)** Start a database transaction
+
+**✅ Answer: B**
+
+---
+
+### Question 5
+
+Which pattern best represents the following ATM flow?
+
+```text
+Card Validation
+      ↓
+PIN Validation
+      ↓
+Limit Check
+      ↓
+Fraud Check
+      ↓
+Dispense Cash
+```
+
+**A)** Strategy
+
+**B)** Factory
+
+**C)** Chain of Responsibility
+
+**D)** Observer
+
+**✅ Answer: C**
+
+---
+
+# Final Cheat Sheet
+
+```text
+Strategy
+→ Choose ONE algorithm.
 
 Decorator
+→ WRAP an object with additional behavior.
 
-Logging
-↓
-Retry
-↓
-Payment
+Observer
+→ NOTIFY multiple subscribers.
 
-Hepsi çalışır.
+Command
+→ REPRESENT an operation as an object.
 
-Chain
-
-Validation
-
-↓
-
-Fraud
-
-↓
-
-Limit
-
-Birisi
-
-STOP
-
-derse
-
-devam etmez.
-```
-
-> Chain of Responsibility Pattern, bir isteği birden fazla handler'ın sırayla işlemesini sağlar. Her handler isterse isteği işler ve zinciri devam ettirir, isterse zinciri durdurur.
-
-> ASP.NET Core Middleware neden Chain of Responsibility'dir?
-> Çünkü her middleware request'i işler ve await next() çağırarak pipeline'ın devam etmesine karar verir. İsterse next() çağırmayıp pipeline'ı sonlandırabilir.
-
-```
-1)
-
-Chain of Responsibility'nin temel amacı nedir?
-
-A) Algoritma değiştirmek
-
-B) İsteği sırayla birden fazla handler'ın işlemesi
-
-C) Nesne üretmek
-
-D) Interface çevirmek
-
-2)
-
-Handler zinciri hangi durumda durur?
-
-A) İlk handler çalışınca
-
-B) Son handler çalışınca
-
-C) Bir handler isteği sonlandırıp devam ettirmezse
-
-D) Her zaman tüm handler'lar çalışır
-
-3)
-
-ASP.NET Core'da aşağıdakilerden hangisi Chain of Responsibility örneğidir?
-
-A) Dependency Injection
-
-B) Middleware Pipeline
-
-C) AutoMapper
-
-D) Entity Framework
-
-4)
-
-await next() hangi anlama gelir?
-
-A) Yeni nesne oluştur.
-
-B) Bir sonraki handler'ı çalıştır.
-
-C) Event yayınla.
-
-D) Transaction başlat.
-
-5)
-
-ATM'de aşağıdaki akış hangi pattern'e örnektir?
-
-Kart Kontrolü
-      ↓
-PIN Kontrolü
-      ↓
-Limit Kontrolü
-      ↓
-Fraud Kontrolü
-      ↓
-Para Ver
-
-A) Strategy
-
-B) Factory
-
-C) Chain of Responsibility
-
-D) Observer
-
-Doğru Cevaplar
-B
-C
-B
-B
-C
+Chain of Responsibility
+→ PASS a request through multiple handlers.
 ```
