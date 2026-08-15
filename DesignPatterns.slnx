@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="AdapterPattern/AdapterPattern.csproj" Id="516d4424-bcfa-465b-ab9d-aa0d479dd79e" />
   <Project Path="Structural.Patterns.Adapter/Structural.Patterns.Adapter.csproj" Id="91e11192-75a1-4347-92cb-32e2b76464bb" />
 </Solution>
