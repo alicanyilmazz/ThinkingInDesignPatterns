@@ -1,14 +1,14 @@
-# DesignPatterns
+# Design Patterns
 
 ```diff
 - Decorator Pattern
 ```
 
 ```diff
-@@ Elimizde bir service var @@
+@@ Let's say we have a service @@
 ```
 
-```c#
+```csharp
 public interface IPaymentService
 {
     void Pay(decimal amount);
@@ -16,10 +16,10 @@ public interface IPaymentService
 ```
 
 ```diff
-@@ Gerçek implementasyon: @@
+@@ Concrete implementation: @@
 ```
 
-```c#
+```csharp
 public class PaymentService : IPaymentService
 {
     public void Pay(decimal amount)
@@ -28,52 +28,59 @@ public class PaymentService : IPaymentService
     }
 }
 ```
+
 ```diff
-@@ Kullanımı: @@
+@@ Usage: @@
 ```
-```c#
+
+```csharp
 IPaymentService paymentService = new PaymentService();
 
 paymentService.Pay(100);
 ```
 
 ```diff
-@@ Çıktı @@
+@@ Output @@
 ```
+
 ```diff
 + Payment completed : 100
 ```
+
 ```diff
-@@Sonra müşteri diyor ki @@
+@@ Then the client starts requesting new features @@
 
-✅ Her ödeme öncesi log atalım.
+✅ Let's add logging before every payment.
 
-✅ Tamam.
+✅ Done.
 
-✅ Sonra
+✅ Then:
 
-✅ Cache ekleyelim.
+✅ Let's add caching.
 
-✅ Sonra
+✅ Then:
 
-✅ Authorization olsun.
+✅ Let's add authorization.
 
-✅ Sonra
+✅ Then:
 
-✅ Retry olsun.
+✅ Let's add retry logic.
 
-✅ Sonra
+✅ Then:
 
-✅Performance ölçelim.
+✅ Let's measure performance.
 
--Şimdi ne yapacağız?
+- What should we do now?
 ```
-___________________________________
+
+---
+
 ```diff
-- Kötü çözüm
-- Her şeyi PaymentService'in içine koymak.
+- Bad Solution
+- Put everything inside PaymentService.
 ```
-```c#
+
+```csharp
 public class PaymentService
 {
     public void Pay(decimal amount)
@@ -94,57 +101,65 @@ public class PaymentService
     }
 }
 ```
-```diff
-@@ Bu artık @@
-❌ Single Responsibility Principle'yi bozuyor.
 
-Çünkü PaymentService artık
-* ödeme yapıyor
-* log atıyor
-* cache yönetiyor
-* retry yapıyor
-* authorization yapıyor
-```
-___________________________________
 ```diff
-@@ Decorator ne diyor? @@
-+ Asıl sınıfa dokunma.
-+ Üzerine yeni davranış ekle.
-+ Yani
+@@ Now PaymentService violates the Single Responsibility Principle. @@
+
+Because PaymentService is responsible for:
+
+* processing payments
+* logging
+* caching
+* retry logic
+* authorization
+* performance measurement
 ```
 
-```c#
+---
+
+```diff
+@@ What does the Decorator Pattern say? @@
+
++ Don't modify the original class.
++ Add new behavior around it.
+```
+
+```text
 Logging
-      ↓
+   ↓
 Caching
-      ↓
+   ↓
 Authorization
-      ↓
+   ↓
 PaymentService
 ```
 
 ```diff
-@@ Katman katman. @@
+@@ We wrap the service layer by layer. @@
 ```
-__________________________________________
+
+---
 
 ```diff
-@@ İlk Decorator @@
+@@ First Decorator @@
 ```
+
 ```diff
 - Interface
 ```
 
-```c#
+```csharp
 public interface IPaymentService
 {
     void Pay(decimal amount);
 }
 ```
+
 ```diff
-- Asıl servis
+- Concrete Service
 ```
-```c#
+
+```csharp
 public class PaymentService : IPaymentService
 {
     public void Pay(decimal amount)
@@ -153,10 +168,12 @@ public class PaymentService : IPaymentService
     }
 }
 ```
+
 ```diff
 - Decorator
 ```
-```c#
+
+```csharp
 public class LoggingPaymentDecorator : IPaymentService
 {
     private readonly IPaymentService _paymentService;
@@ -178,31 +195,37 @@ public class LoggingPaymentDecorator : IPaymentService
 ```
 
 ```diff
-- Kullanımı
-```
-```c#
-IPaymentService payment = new LoggingPaymentDecorator(new PaymentService());
-payment.Pay(500);
-```
-```diff
-@@ Çıktı @@
+- Usage
 ```
 
-```log
+```csharp
+IPaymentService payment =
+    new LoggingPaymentDecorator(
+        new PaymentService());
+
+payment.Pay(500);
+```
+
+```diff
+@@ Output @@
+```
+
+```text
 Log started
 
 Payment : 500
 
 Log finished
 ```
-__________________________________________
+
+---
 
 ```diff
-@@ İkinci Decorator @@
-+ Mesela Authorization
+@@ Second Decorator @@
++ Let's add Authorization.
 ```
 
-```c#
+```csharp
 public class AuthorizationDecorator : IPaymentService
 {
     private readonly IPaymentService _service;
@@ -220,319 +243,391 @@ public class AuthorizationDecorator : IPaymentService
     }
 }
 ```
+
 ```diff
-@@ Şimdi @@
-```
-```c#
-IPaymentService payment = new AuthorizationDecorator(new LoggingPaymentDecorator(new PaymentService()));
-```
-```diff
-@@ Çalışma sırası @@
+@@ Now we can compose them like this: @@
 ```
 
+```csharp
+IPaymentService payment =
+    new AuthorizationDecorator(
+        new LoggingPaymentDecorator(
+            new PaymentService()));
 ```
+
+```diff
+@@ Execution order @@
+```
+
+```text
 Authorization
-
-↓
-
+      ↓
 Logging
-
-↓
-
+      ↓
 PaymentService
 ```
+
 ```diff
-@@ İstersen @@
+@@ We can add as many decorators as we need. @@
 ```
-```
+
+```text
 Cache
-
-↓
-
+   ↓
 Retry
-
-↓
-
+   ↓
 Authorization
-
-↓
-
+   ↓
 Logging
-
-↓
-
+   ↓
 PaymentService
 ```
 
+---
+
 ```diff
-@@ şeklinde 20 tane bile ekleyebilirsin. @@
+@@ How does the chain work? @@
 ```
-__________________________________________
-```diff
-@@ Zincir nasıl çalışıyor? @@
-```
-```
+
+```text
 Pay()
-
-↓
-
+  ↓
 AuthorizationDecorator
-
-↓
-
+  ↓
 LoggingDecorator
-
-↓
-
+  ↓
 PaymentService
 ```
+
 ```diff
-✅ Decorator'ın en önemli mantığı budur.
-✅ Her decorator aynı interface'i implement eder.
-✅ İçinde yine aynı interface tutulur.
+✅ This is the core idea of the Decorator Pattern.
+
+✅ Every decorator implements the same interface.
+
+✅ Every decorator also holds a reference to that same interface.
 ```
 
-```
+```text
 Decorator
-
-↓
-
+   ↓
 IPaymentService
-
-↓
-
+   ↓
 PaymentService
 ```
-__________________________________________
+
+---
+
 ```diff
-@@ En önemli özellik @@
-- Decorator aynı interface'i implement eder.
-+ Bak
+@@ The Most Important Characteristic @@
 ```
-```c#
+
+```diff
+- A decorator implements the same interface:
+```
+
+```csharp
 public class LoggingDecorator : IPaymentService
 ```
+
 ```diff
-@@ ve içinde @@
+@@ And it also contains a reference to the same interface: @@
 ```
-```c#
+
+```csharp
 private readonly IPaymentService _paymentService;
 ```
+
 ```diff
-@@ vardır. Yani hem IPaymentService gibi davranır. Hem IPaymentService tutar. Bu pattern'in özü budur.@@
-```
-__________________________________________
-```diff
-@@ Gerçek .NET örneği @@
-+ Mesela
+@@ Therefore, it behaves like an IPaymentService while also wrapping another IPaymentService. @@
+
+@@ This is the essence of the Decorator Pattern. @@
 ```
 
-```c#
+---
+
+```diff
+@@ Real-World .NET Example @@
+```
+
+```csharp
 IRepository
 ```
+
 ```diff
-+ Asıl repository
++ Concrete repository:
 ```
-```c#
+
+```text
 SqlRepository
 ```
+
 ```diff
-@@ Cache eklemek istiyorsun. @@
+@@ Now suppose we want to add caching. @@
 ```
-```c#
+
+```text
 CachingRepositoryDecorator
 ```
+
 ```diff
-@@ yazarsın @@
-```
-```
-GetById()
-↓
-Cache var mı?
-↓
-Varsa dön.
-↓
-Yoksa
-↓
-Repository.GetById()
-↓
-Cache'e yaz
-↓
-Dön.
-```
-```diff
-@@ Repository değişmedi. @@
-```
-__________________________________________
-```diff
-@@ Bankacılık örneği @@
+@@ The flow could look like this: @@
 ```
 
-```c#
-ATM'de Withdraw() metodu var.
-Her para çekmede
+```text
+GetById()
+    ↓
+Is the item in cache?
+    ↓
+Yes → Return it
+    ↓
+No
+    ↓
+Repository.GetById()
+    ↓
+Store it in cache
+    ↓
+Return it
+```
+
+```diff
+@@ The original Repository does not need to change. @@
+```
+
+---
+
+```diff
+@@ Banking Example @@
+```
+
+```text
+Suppose an ATM has a Withdraw() operation.
+
+Every withdrawal may require:
+
 Fraud Check
-↓
+     ↓
 AML Check
-↓
+     ↓
 Logging
-↓
+     ↓
 Performance
-↓
+     ↓
 Withdraw
 ```
-```diff
-@@ Hepsi decorator olabilir. @@
-```
-__________________________________________
 
 ```diff
-@@ ASP.NET Core'da nerede var? @@
-@@ Mesela  @@
+@@ Each of these cross-cutting behaviors can potentially be implemented using decorators. @@
+```
+
+---
+
+```diff
+@@ Where do we see this idea in ASP.NET Core? @@
+```
+
+```diff
+@@ For example: @@
 @@ MediatR @@
-@@ Pipeline Behavior @@
+@@ Pipeline Behaviors @@
 ```
-```
+
+```text
 Validation
-↓
+    ↓
 Logging
-↓
+    ↓
 Transaction
-↓
+    ↓
 Handler
 ```
+
 ```diff
-@@ Decorator mantığıyla çalışır. @@
+@@ Pipeline behaviors use a decorator-like approach around the request handler. @@
 ```
+
 ```diff
 @@ Scrutor @@
 ```
-```c#
-services.Decorate<IOrderService,
-                 LoggingOrderService>();
+
+```csharp
+services.Decorate<IOrderService, LoggingOrderService>();
 ```
+
 ```diff
-@@Bu da gerçek Decorator'dır.@@
+@@ This is a direct example of decorating a registered service. @@
 ```
-__________________________________________
+
+---
+
 ```diff
-@@ Avantajları @@
-✅ Open Closed Principle
-✅ Yeni özellik eklemek için mevcut kod değişmez.
-✅ Single Responsibility korunur.
-✅ İstenildiği kadar davranış eklenebilir.
-✅ Runtime'da eklenebilir.
+@@ Advantages @@
+
+✅ Supports the Open/Closed Principle.
+
+✅ New behavior can be added without modifying existing code.
+
+✅ Helps preserve the Single Responsibility Principle.
+
+✅ Multiple behaviors can be composed together.
+
+✅ Behaviors can be added dynamically at runtime.
 ```
-__________________________________________
+
+---
+
 ```diff
-@@ Dezavantajları @@
-❌ Çok fazla decorator olursa debug etmek zorlaşabilir.
+@@ Disadvantages @@
+
+❌ Too many decorators can make the execution flow harder to understand and debug.
+
+❌ Deep decorator chains can make object construction more complex.
 ```
-__________________________________________
+
+---
 
 ```diff
 @@ Decorator vs Inheritance @@
-- Kötü çözüm
+
+- Bad approach:
 ```
 
-```
+```text
 PaymentService
-↓
+      ↓
 LoggingPaymentService
-↓
+      ↓
 CachingLoggingPaymentService
-↓
+      ↓
 AuthorizationCachingLoggingPaymentService
 ```
+
 ```diff
-@@ Patlar. @@
-@@ Class sayısı inanılmaz artar. @@
-@@ Decorator bunu çözer. @@
+@@ This can quickly become unmanageable. @@
+
+@@ The number of classes can grow dramatically. @@
+
+@@ Decorator avoids this problem by favoring composition over inheritance. @@
 ```
-__________________________________________
+
+---
 
 ```diff
 @@ Decorator vs Proxy @@
-@@ En çok sorulan soru. @@
+
+@@ A common interview question. @@
 
 - Decorator
-> - Davranış ekler.
-Örneğin:
-* Log
-* Cache
+
+> Adds additional behavior to an object.
+
+Examples:
+
+* Logging
+* Caching
 * Retry
 * Validation
+* Performance measurement
 
 - Proxy
-> - Aynı davranışı korur ama erişimi kontrol eder.
-Örneğin
+
+> Controls or manages access to another object.
+
+Examples:
+
 * Remote Proxy
 * Lazy Proxy
-* Security Proxy 
+* Security / Protection Proxy
 ```
-```diff
-@@ Decorator neden inheritance yerine composition kullanır? @@
-@@ Çünkü davranışları runtime'da dinamik olarak ekleyip çıkarabilmek ve sınıf patlamasını (class explosion) önlemek için. @@
-```
-```diff
-> @@ Decorator Pattern, bir nesnenin davranışını nesneyi değiştirmeden, aynı interface üzerinden çalışan başka nesnelerle sararak genişletir. @@
-```
-
-__________________________________________
 
 ```diff
-@@ LoggingDecorator -> AuthorizationDecorator -> PaymentService zincirinde Pay() çağrıldığında ilk çalışan hangisidir? @@
+@@ Why does Decorator prefer composition over inheritance? @@
+
+@@ Because behaviors can be dynamically combined at runtime without creating a large inheritance hierarchy. @@
 ```
 
-```c#
-Zincir new AuthorizationDecorator(new LoggingDecorator(new PaymentService())) ise ilk çalışan AuthorizationDecorator'dır. Sonra LoggingDecorator, en son PaymentService çalışır.
+> **Decorator Pattern extends an object's behavior without modifying the original object by wrapping it with other objects that implement the same interface.**
+
+---
+
+```diff
+@@ Interview Question @@
+
+@@ In the following decorator chain, which one executes first? @@
 ```
-```c#
-Soru
 
-Aşağıdakilerden hangisi Decorator Pattern'in en önemli avantajıdır?
-
-A) Nesnenin bellekte daha az yer kaplamasını sağlar.
-
-B) Runtime'da davranışların dinamik olarak eklenebilmesini sağlar.
-
-C) Constructor sayısını azaltır.
-
-D) Interface kullanımını ortadan kaldırır.
-
-✅ Cevap: B
-
-Soru
-
-Decorator hangi SOLID prensibini destekler?
-
-A) SRP
-
-B) OCP
-
-C) ISP
-
-D) DIP
-
-✅ En doğru cevap: B (Open/Closed Principle)
-
-Çünkü mevcut sınıfı değiştirmeden yeni davranış ekleriz.
-
-Not: Her decorator kendi sorumluluğuna sahip olduğu için dolaylı olarak SRP'yi de destekler, ancak mülakatlarda beklenen cevap OCP'dir.
-
-Soru
-
-Decorator ile ilgili aşağıdakilerden hangisi yanlıştır?
-
-A) Aynı interface'i implement eder.
-
-B) İçinde aynı interface'in referansını tutar.
-
-C) Davranış eklemek için kullanılır.
-
-D) Yeni nesnenin hangi tip olacağına karar verir.
-
-✅ Cevap: D
-
-Bu Factory Pattern'in görevidir.
+```csharp
+IPaymentService payment =
+    new AuthorizationDecorator(
+        new LoggingDecorator(
+            new PaymentService()));
 ```
+
+```text
+AuthorizationDecorator executes first.
+
+Then:
+
+AuthorizationDecorator
+        ↓
+LoggingDecorator
+        ↓
+PaymentService
+```
+
+---
+
+## Questions
+
+### Question 1
+
+Which of the following is one of the most important advantages of the Decorator Pattern?
+
+**A)** It reduces the memory usage of an object.
+
+**B)** It allows behaviors to be dynamically added at runtime.
+
+**C)** It reduces the number of constructors.
+
+**D)** It eliminates the need for interfaces.
+
+**✅ Answer: B**
+
+The Decorator Pattern allows us to dynamically compose additional behaviors around an existing object.
+
+---
+
+### Question 2
+
+Which SOLID principle is most directly supported by the Decorator Pattern?
+
+**A)** SRP — Single Responsibility Principle
+
+**B)** OCP — Open/Closed Principle
+
+**C)** ISP — Interface Segregation Principle
+
+**D)** DIP — Dependency Inversion Principle
+
+**✅ Answer: B — Open/Closed Principle**
+
+We can extend the behavior of an existing component without modifying its implementation.
+
+> **Note:** Decorator can also help with SRP because each decorator can have a single responsibility. However, **OCP** is usually the primary answer expected in interviews.
+
+---
+
+### Question 3
+
+Which statement about the Decorator Pattern is **incorrect**?
+
+**A)** A decorator implements the same interface as the object it wraps.
+
+**B)** A decorator holds a reference to the same interface.
+
+**C)** A decorator can add additional behavior.
+
+**D)** A decorator decides which concrete object should be created.
+
+**✅ Answer: D**
+
+Deciding which concrete object should be created is primarily the responsibility of **Factory Patterns**, not the Decorator Pattern.
