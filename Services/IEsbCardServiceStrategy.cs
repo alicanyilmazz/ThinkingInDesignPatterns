@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Services;
 
-public interface IEsbSpecialService
+public interface IEsbCardServiceStrategy : ICardServiceStrategy
 {
     DoPinChangeResponse DoPinChange(DoPinChangeRequest request);
 

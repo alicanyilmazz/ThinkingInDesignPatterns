@@ -51,8 +51,8 @@ Console.WriteLine(webServiceResponse.Message);
 // ESB-only operations
 // =======================================
 
-IEsbSpecialService esbSpecialService = new EsbSpecialService();
+IEsbCardServiceStrategy esbCardServiceStrategy = new EsbCardServiceStrategy();
 
-var pinChangeResponse = esbSpecialService.DoPinChange(new DoPinChangeRequest { CardNumber = "5295451234567890" });
+var pinChangeResponse = esbCardServiceStrategy.DoPinChange(new DoPinChangeRequest { CardNumber = "5295451234567890" });
 
-var cashResponse = esbSpecialService.DoCashWithDrawal(new DoCashWithDrawalRequest { Amount = 1000 });
+var cashResponse = esbCardServiceStrategy.DoCashWithDrawal(new DoCashWithDrawalRequest { Amount = 1000 });
