@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="AbstractFactory/AbstractFactory.csproj" Id="15ecea72-15ae-4041-9777-22b0b016fc27" />
   <Project Path="CreationalPatterns.AbstractFactoryMethod/CreationalPatterns.AbstractFactoryMethod.csproj" Id="b9a48d34-6530-436d-9a99-a8e11c451de4" />
 </Solution>
