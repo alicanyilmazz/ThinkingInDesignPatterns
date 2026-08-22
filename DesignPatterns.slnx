@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="Behavioral.Patterns.Command.ECommerce/Behavioral.Patterns.Command.ECommerce.csproj" Id="66485755-1d07-442a-add5-08f97692f245" />
   <Project Path="Behavioral.Patterns.Command/Behavioral.Patterns.Command.csproj" Id="6008273c-856c-4ae1-af74-a2abe632064b" />
   <Project Path="Behavioral.Patterns.Commands/Behavioral.Patterns.Commands.csproj" Id="5ad3418a-e891-405e-8f24-82a7233e8809" />
 </Solution>
