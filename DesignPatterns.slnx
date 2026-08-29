@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="Behavioral.Patterns.Observer/Behavioral.Patterns.Observer.csproj" Id="a8ed1964-c57c-4e55-99e9-59f59b676b79" />
+  <Project Path="ObserverPattern.YouTube/ObserverPattern.YouTube.csproj" Id="61217798-8955-4554-b75d-5da99d85dd13" />
 </Solution>
