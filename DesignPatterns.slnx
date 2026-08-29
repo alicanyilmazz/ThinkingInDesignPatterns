@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="Behavioral.Patterns.State.MusicPlayer/Behavioral.Patterns.State.MusicPlayer.csproj" Id="de9c3a89-2752-4d7b-9d54-31747b9abc2e" />
+  <Project Path="Behavioral.Patterns.State.VendingMachine/Behavioral.Patterns.State.VendingMachine.csproj" Id="65ccfa40-966d-4945-aa17-19881805d95f" />
   <Project Path="Behavioral.Patterns.State/Behavioral.Patterns.State.csproj" Id="d2618a52-f72e-4d2a-b4ea-c328e033407b" />
 </Solution>
