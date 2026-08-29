@@ -1,192 +1,53 @@
-﻿using System;
+﻿using Behavioral.Patterns.State;
 
-namespace StatePatternDemo
-{
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            var order = new OrderContext(new PendingState());
+Order order = new Order(id: 1001, productName: "Laptop", amount: 50000);
 
-            order.Pay();
-            Console.WriteLine();
 
-            order.Ship();
-            Console.WriteLine();
+Console.WriteLine($"Sipariş Durumu: {order.Status}");
 
-            order.Deliver();
-            Console.WriteLine();
+Console.WriteLine("--------------------------");
 
-            order.Cancel();
-            Console.WriteLine();
 
-            Console.ReadLine();
-        }
-    }
+order.Ship();
 
-    #region Context
 
-    public class OrderContext
-    {
-        public IOrderState State { get; set; }
+Console.WriteLine("--------------------------");
 
-        public OrderContext(IOrderState state)
-        {
-            State = state;
-        }
 
-        public void Pay()
-        {
-            State.Pay(this);
-        }
+order.Pay();
 
-        public void Ship()
-        {
-            State.Ship(this);
-        }
 
-        public void Deliver()
-        {
-            State.Deliver(this);
-        }
+Console.WriteLine($"Sipariş Durumu: {order.Status}");
 
-        public void Cancel()
-        {
-            State.Cancel(this);
-        }
-    }
+Console.WriteLine("--------------------------");
 
-    #endregion
 
-    #region State Interface
+order.Pay();
 
-    public interface IOrderState
-    {
-        void Pay(OrderContext context);
 
-        void Ship(OrderContext context);
+Console.WriteLine("--------------------------");
 
-        void Deliver(OrderContext context);
 
-        void Cancel(OrderContext context);
-    }
+order.Ship();
 
-    #endregion
 
-    #region Pending
+Console.WriteLine($"Sipariş Durumu: {order.Status}");
 
-    public class PendingState : IOrderState
-    {
-        public void Pay(OrderContext context)
-        {
-            Console.WriteLine("Ödeme alındı.");
-            Console.WriteLine("State : Pending -> Paid");
+Console.WriteLine("--------------------------");
 
-            context.State = new PaidState();
-        }
 
-        public void Ship(OrderContext context)
-        {
-            Console.WriteLine("Ödeme alınmadan kargoya verilemez.");
-        }
+order.Cancel();
 
-        public void Deliver(OrderContext context)
-        {
-            Console.WriteLine("Henüz kargoya verilmedi.");
-        }
 
-        public void Cancel(OrderContext context)
-        {
-            Console.WriteLine("Sipariş iptal edildi.");
-        }
-    }
+Console.WriteLine("--------------------------");
 
-    #endregion
 
-    #region Paid
+order.Deliver();
 
-    public class PaidState : IOrderState
-    {
-        public void Pay(OrderContext context)
-        {
-            Console.WriteLine("Sipariş zaten ödendi.");
-        }
 
-        public void Ship(OrderContext context)
-        {
-            Console.WriteLine("Sipariş kargoya verildi.");
-            Console.WriteLine("State : Paid -> Shipped");
+Console.WriteLine($"Sipariş Durumu: {order.Status}");
 
-            context.State = new ShippedState();
-        }
+Console.WriteLine("--------------------------");
 
-        public void Deliver(OrderContext context)
-        {
-            Console.WriteLine("Henüz kargoya verilmedi.");
-        }
 
-        public void Cancel(OrderContext context)
-        {
-            Console.WriteLine("Refund işlemi başlatıldı.");
-        }
-    }
-
-    #endregion
-
-    #region Shipped
-
-    public class ShippedState : IOrderState
-    {
-        public void Pay(OrderContext context)
-        {
-            Console.WriteLine("Sipariş zaten ödendi.");
-        }
-
-        public void Ship(OrderContext context)
-        {
-            Console.WriteLine("Sipariş zaten kargoda.");
-        }
-
-        public void Deliver(OrderContext context)
-        {
-            Console.WriteLine("Sipariş teslim edildi.");
-            Console.WriteLine("State : Shipped -> Completed");
-
-            context.State = new CompletedState();
-        }
-
-        public void Cancel(OrderContext context)
-        {
-            Console.WriteLine("Kargoya verilen sipariş iptal edilemez.");
-        }
-    }
-
-    #endregion
-
-    #region Completed
-
-    public class CompletedState : IOrderState
-    {
-        public void Pay(OrderContext context)
-        {
-            Console.WriteLine("Sipariş tamamlandı.");
-        }
-
-        public void Ship(OrderContext context)
-        {
-            Console.WriteLine("Sipariş teslim edildi.");
-        }
-
-        public void Deliver(OrderContext context)
-        {
-            Console.WriteLine("Sipariş zaten teslim edildi.");
-        }
-
-        public void Cancel(OrderContext context)
-        {
-            Console.WriteLine("Tamamlanan sipariş iptal edilemez.");
-        }
-    }
-
-    #endregion
-}
+order.Cancel();
