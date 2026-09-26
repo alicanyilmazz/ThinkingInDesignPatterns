@@ -1,33 +1,11 @@
-﻿Console.WriteLine("Hello, World!");
+﻿using Behavioral.Patterns.Observer;
 
-// Observer olmadan problem
+var product = new ProductStock("PlayStation 6");
 
-/*
- 
-public sealed class OrderService
-{
-    private readonly EmailService _emailService;
-    private readonly StockService _stockService;
-    private readonly InvoiceService _invoiceService;
+var emailObserver = new EmailStockObserver();
+var mobileObserver = new MobileStockObserver();
 
-    public OrderService(
-        EmailService emailService,
-        StockService stockService,
-        InvoiceService invoiceService)
-    {
-        _emailService = emailService;
-        _stockService = stockService;
-        _invoiceService = invoiceService;
-    }
+product.StockChanged += emailObserver.HandleStockChanged;
+product.StockChanged += mobileObserver.HandleStockChanged;
 
-    public void CreateOrder(Order order)
-    {
-        Console.WriteLine("Sipariş oluşturuldu.");
-
-        _emailService.Send(order);
-        _stockService.Reduce(order);
-        _invoiceService.Create(order);
-    }
-}
-
-*/
+product.UpdateStock(10);
