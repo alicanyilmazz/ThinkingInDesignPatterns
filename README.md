@@ -1,577 +1,983 @@
-# DesignPatterns
+# Observer Design Pattern
 
-```diff
-@@ Observer Pattern @@
+> **Behavioral Design Pattern**
 
-Bu pattern özellikle şu konuların temelidir:
+The **Observer Pattern** defines a one-to-many dependency between objects.
 
-Event-driven architecture
-Domain events
-UI event’leri
-Notification sistemleri
-Message broker mantığı
-Microservice event yayınlama
-React state değişiklikleri
-C# event ve delegate yapısı
+When the state of one object changes, all interested objects are automatically notified.
+
+In simple terms:
+
+```text
+Something happens
+       ↓
+An event is published
+       ↓
+All interested subscribers are notified
 ```
 
-```diff
-@@ Observer Pattern nedir? @@
+The Observer Pattern is one of the fundamental ideas behind:
 
+- C# events and delegates
+- UI event handling
+- Notification systems
+- Domain events
+- Event-driven applications
+- Reactive systems
+- Message-based architectures
 
-```
-> Bir nesnenin durumu değiştiğinde, ona abone olan diğer nesnelerin otomatik olarak bilgilendirilmesini sağlar.
+---
 
-```diff
-- Burada iki ana taraf vardır:
-@@ Subject / Publisher: Olayı yayınlayan taraf @@
-@@ Observer / Subscriber: Olayı dinleyen taraf @@
+# 1. The Problem
 
-Örneğin sipariş oluşturulduğunda:
+Imagine that we have a product whose stock can change.
 
-OrderService
-   ↓
-OrderCreated olayı
-   ↓
-EmailNotification
-StockService
-InvoiceService
-LoyaltyPointService
+Whenever the stock changes, several parts of the system need to react:
 
-- OrderService, bu servisleri tek tek çağırmak zorunda kalmaz. Olayı yayınlar, aboneler kendi işlerini yapar.
-
-```
-
-__________________________________________
-
-
-```diff
-@@ Observer olmadan problem @@
+```text
+Product Stock Changed
+        |
+        +----> Send Email
+        |
+        +----> Send Push Notification
+        |
+        +----> Update Dashboard
+        |
+        +----> Write Analytics
 ```
 
-```c#
-public sealed class OrderService
+A naive implementation could look like this:
+
+```csharp
+public class ProductStock
 {
     private readonly EmailService _emailService;
-    private readonly StockService _stockService;
-    private readonly InvoiceService _invoiceService;
+    private readonly MobileNotificationService _mobileService;
+    private readonly DashboardService _dashboardService;
 
-    public OrderService(
+    public int Stock { get; private set; }
+
+    public ProductStock(
         EmailService emailService,
-        StockService stockService,
-        InvoiceService invoiceService)
+        MobileNotificationService mobileService,
+        DashboardService dashboardService)
     {
         _emailService = emailService;
-        _stockService = stockService;
-        _invoiceService = invoiceService;
+        _mobileService = mobileService;
+        _dashboardService = dashboardService;
     }
 
-    public void CreateOrder(Order order)
+    public void UpdateStock(int newStock)
     {
-        Console.WriteLine("Sipariş oluşturuldu.");
+        Stock = newStock;
 
-        _emailService.Send(order);
-        _stockService.Reduce(order);
-        _invoiceService.Create(order);
+        _emailService.Send(Stock);
+        _mobileService.Send(Stock);
+        _dashboardService.Refresh(Stock);
     }
 }
 ```
-```diff
-Buradaki sorun:
 
-@@ OrderService @@ , bütün yan işlemleri biliyor.
+The problem is that `ProductStock` now knows about every action that must happen after a stock change.
 
-Yeni bir requirement geldiğinde:
+What happens when we add another requirement?
 
-SMS gönder
-Loyalty puanı ekle
-Audit log yaz
-Kargo kaydı oluştur
-
-@@ OrderService @@ sürekli değiştirilir.
-- Bu hem bağımlılığı artırır hem de OCP açısından kötü bir tasarımdır.
+```text
+Send SMS
+Write audit log
+Update analytics
+Notify another system
 ```
-__________________________________________
-```diff
-@@ Observer çözümü @@
 
-@@ OrderService @@ yalnızca olay yayınlar:
+We must modify `ProductStock` again.
 
-OrderCreated
-
-Aboneler bu olayı dinler:
-- EmailObserver
-- StockObserver
-- InvoiceObserver
-
-```
-__________________________________________
-```diff
-@@ Temel C# örneği @@
-Observer interface
-```
-```c#
-public interface IOrderObserver
+```csharp
+public void UpdateStock(int newStock)
 {
-    void Update(Order order);
+    Stock = newStock;
+
+    _emailService.Send(Stock);
+    _mobileService.Send(Stock);
+    _dashboardService.Refresh(Stock);
+
+    _smsService.Send(Stock);
+    _analyticsService.Track(Stock);
+    _auditService.Write(Stock);
 }
 ```
-```diff
-@@ Bütün observer’lar bu sözleşmeye uyar.  @@
 
-@@ Subject interface @@
+The class becomes increasingly coupled to unrelated components.
+
+This violates an important design goal:
+
+> The object producing the change should not need to know every object interested in that change.
+
+This is where the **Observer Pattern** becomes useful.
+
+---
+
+# 2. Core Idea
+
+There are two main roles.
+
+### Subject / Publisher
+
+The object being observed.
+
+It maintains the subscribers and notifies them when something happens.
+
+### Observer / Subscriber
+
+An object interested in changes occurring in the subject.
+
+```text
+                     Subject
+                        |
+                        |
+                     Notify
+                        |
+          +-------------+-------------+
+          |             |             |
+          v             v             v
+      Observer A    Observer B    Observer C
 ```
 
-```c#
-public interface IOrderSubject
+The important point is that the subject does not need to know the concrete behavior of its observers.
+
+It only knows that they follow a common contract.
+
+---
+
+# 3. Classic Observer Implementation
+
+Let's implement the pattern manually first.
+
+This is useful because it shows exactly what happens internally before using C#'s built-in `event` mechanism.
+
+## Observer
+
+```csharp
+public interface IObserver
 {
-    void Subscribe(IOrderObserver observer);
-
-    void Unsubscribe(IOrderObserver observer);
-
-    void Notify(Order order);
+    void Update(ProductStock stock);
 }
 ```
-```diff
-@@ Order modeli @@
-```
 
-```c#
-public sealed class Order
+Every observer must implement the `Update` method.
+
+---
+
+## Subject
+
+```csharp
+public interface ISubject
 {
-    public int Id { get; init; }
+    void Attach(IObserver observer);
 
-    public string CustomerEmail { get; init; } = string.Empty;
+    void Detach(IObserver observer);
 
-    public decimal TotalAmount { get; init; }
+    void Notify();
 }
 ```
-```diff
-@@ Subject implementasyonu @@
+
+The subject is responsible for:
+
+```text
+Attach   -> Subscribe an observer
+Detach   -> Unsubscribe an observer
+Notify   -> Notify all subscribed observers
 ```
 
-```c#
-public sealed class OrderService : IOrderSubject
-{
-    private readonly List<IOrderObserver> _observers = [];
+---
 
-    public void Subscribe(IOrderObserver observer)
+# 4. Product Stock Example
+
+The `ProductStock` class is our **Concrete Subject**.
+
+```csharp
+public class ProductStock : ISubject
+{
+    private readonly List<IObserver> _observers = [];
+
+    public string ProductName { get; }
+
+    public int Stock { get; private set; }
+
+    public ProductStock(string productName)
     {
-        ArgumentNullException.ThrowIfNull(observer);
+        ProductName = productName;
+    }
 
+    public void Attach(IObserver observer)
+    {
         if (!_observers.Contains(observer))
         {
             _observers.Add(observer);
         }
     }
 
-    public void Unsubscribe(IOrderObserver observer)
+    public void Detach(IObserver observer)
     {
-        ArgumentNullException.ThrowIfNull(observer);
-
         _observers.Remove(observer);
     }
 
-    public void Notify(Order order)
+    public void UpdateStock(int newStock)
     {
-        foreach (IOrderObserver observer in _observers)
+        Stock = newStock;
+
+        Notify();
+    }
+
+    public void Notify()
+    {
+        foreach (var observer in _observers)
         {
-            observer.Update(order);
+            observer.Update(this);
         }
     }
+}
+```
 
-    public void CreateOrder(Order order)
+Notice what `ProductStock` does **not** know:
+
+```text
+Email
+Push notification
+Dashboard
+Analytics
+SMS
+```
+
+It only knows:
+
+```csharp
+IObserver
+```
+
+---
+
+# 5. Concrete Observers
+
+## Email Observer
+
+```csharp
+public class EmailStockObserver : IObserver
+{
+    public void Update(ProductStock stock)
     {
-        ArgumentNullException.ThrowIfNull(order);
-
         Console.WriteLine(
-            $"Sipariş oluşturuldu. OrderId: {order.Id}");
-
-        Notify(order);
+            $"EMAIL -> {stock.ProductName} stock changed to {stock.Stock}");
     }
 }
 ```
-```diff
-@@ Buradaki önemli yer: @@
-```
 
-```c#
-private readonly List<IOrderObserver> _observers = [];
-```
-```diff
-@@ Subject, kendisine abone olan observer’ları tutar. @@
-```
-```diff
-@@ Sipariş oluşturulunca: @@
-```
-```c#
-Notify(order);
-```
-```diff
-@@ çağrılır. @@
-```
-__________________________________________
-```diff
-@@ Observer implementasyonları @@
-```
-```diff
-@@ Email Observer @@
-```
-```c#
-public sealed class EmailObserver : IOrderObserver
+## Mobile Observer
+
+```csharp
+public class MobileStockObserver : IObserver
 {
-    public void Update(Order order)
+    public void Update(ProductStock stock)
     {
         Console.WriteLine(
-            $"E-posta gönderildi: {order.CustomerEmail}");
+            $"PUSH -> {stock.ProductName} stock changed to {stock.Stock}");
     }
 }
 ```
-```diff
-@@ Stock Observer @@
-```
-```c#
-public sealed class StockObserver : IOrderObserver
+
+## Dashboard Observer
+
+```csharp
+public class DashboardStockObserver : IObserver
 {
-    public void Update(Order order)
+    public void Update(ProductStock stock)
     {
         Console.WriteLine(
-            $"Order {order.Id} için stok azaltıldı.");
+            $"DASHBOARD -> {stock.ProductName}: {stock.Stock}");
     }
 }
 ```
-```diff
-@@ Invoice Observer @@
+
+---
+
+# 6. Using the Observer Pattern
+
+```csharp
+var product = new ProductStock("PlayStation 6");
+
+var emailObserver = new EmailStockObserver();
+var mobileObserver = new MobileStockObserver();
+var dashboardObserver = new DashboardStockObserver();
+
+product.Attach(emailObserver);
+product.Attach(mobileObserver);
+product.Attach(dashboardObserver);
+
+product.UpdateStock(10);
 ```
-```c#
-public sealed class InvoiceObserver : IOrderObserver
+
+Output:
+
+```text
+EMAIL -> PlayStation 6 stock changed to 10
+PUSH -> PlayStation 6 stock changed to 10
+DASHBOARD -> PlayStation 6: 10
+```
+
+One event happened:
+
+```text
+Stock changed
+```
+
+But several independent components reacted to it.
+
+---
+
+# 7. Unsubscribing
+
+Observers can also stop listening.
+
+```csharp
+product.Detach(emailObserver);
+
+product.UpdateStock(5);
+```
+
+Now the email observer will no longer receive notifications.
+
+```text
+PUSH -> PlayStation 6 stock changed to 5
+DASHBOARD -> PlayStation 6: 5
+```
+
+This dynamic subscription mechanism is an important characteristic of the Observer Pattern.
+
+---
+
+# 8. Observer Pattern in C#
+
+The previous implementation teaches us how Observer works internally.
+
+However, C# already provides a very natural mechanism for this idea:
+
+```text
+delegate
++
+event
+```
+
+Instead of manually maintaining:
+
+```text
+List<IObserver>
+Attach()
+Detach()
+Notify()
+```
+
+we can use an `event`.
+
+Let's see this with another example.
+
+---
+
+# 9. Order Status Example with C# Events
+
+Imagine an order moving through different states:
+
+```text
+Pending
+   ↓
+Paid
+   ↓
+Shipped
+   ↓
+Delivered
+```
+
+Several components may be interested whenever the status changes.
+
+```text
+                  Order
+                    |
+              StatusChanged
+                    |
+         +----------+----------+
+         |          |          |
+         v          v          v
+       Email     Analytics    SMS
+```
+
+---
+
+# 10. EventArgs
+
+First, we define the information that will be sent to subscribers.
+
+```csharp
+public class OrderStatusChangedEventArgs : EventArgs
 {
-    public void Update(Order order)
-    {
-        Console.WriteLine(
-            $"Order {order.Id} için fatura oluşturuldu.");
-    }
+    public int OrderId { get; init; }
+
+    public string OldStatus { get; init; } = string.Empty;
+
+    public string NewStatus { get; init; } = string.Empty;
 }
 ```
-```diff
-@@ Console App kullanımı @@
-```
-```c#
-var orderService = new OrderService();
 
-var emailObserver = new EmailObserver();
-var stockObserver = new StockObserver();
-var invoiceObserver = new InvoiceObserver();
+---
 
-orderService.Subscribe(emailObserver);
-orderService.Subscribe(stockObserver);
-orderService.Subscribe(invoiceObserver);
+# 11. Publisher
 
-var order = new Order
+```csharp
+public class Order
 {
-    Id = 1001,
-    CustomerEmail = "ali@example.com",
-    TotalAmount = 1_500m
-};
+    public int Id { get; }
 
-orderService.CreateOrder(order);
-```
-```diff
-@@ Çıktı: @@
-Sipariş oluşturuldu. OrderId: 1001
-E-posta gönderildi: ali@example.com
-Order 1001 için stok azaltıldı.
-Order 1001 için fatura oluşturuldu.
-```
+    public string Status { get; private set; }
 
-```diff
-@@ Unsubscribe @@
-Bir observer artık olayı dinlemeyecekse:
-```
-```c#
-orderService.Unsubscribe(invoiceObserver);
-```
+    public event EventHandler<OrderStatusChangedEventArgs>? StatusChanged;
 
-```diff
-@@ Sonraki siparişte fatura observer’ı çalışmaz. @@
-```
-__________________________________________
-```diff
-@@ C# event ile gerçekçi kullanım @@
-C# dilinde @@ Observer Pattern @@  genellikle @@ event @@  ve @@ delegate @@  kullanılarak uygulanır.
-
-@@ EventArgs modeli @@
-```
-```c#
-public sealed class OrderCreatedEventArgs : EventArgs
-{
-    public required Order Order { get; init; }
-}
-```
-```diff
-@@ Publisher @@
-```
-```c#
-public sealed class OrderService
-{
-    public event EventHandler<OrderCreatedEventArgs>? OrderCreated;
-
-    public void CreateOrder(Order order)
+    public Order(int id)
     {
-        ArgumentNullException.ThrowIfNull(order);
-
-        Console.WriteLine(
-            $"Sipariş oluşturuldu: {order.Id}");
-
-        OnOrderCreated(order);
+        Id = id;
+        Status = "Pending";
     }
 
-    private void OnOrderCreated(Order order)
+    public void ChangeStatus(string newStatus)
     {
-        OrderCreated?.Invoke(
+        var oldStatus = Status;
+
+        Status = newStatus;
+
+        OnStatusChanged(oldStatus, newStatus);
+    }
+
+    protected virtual void OnStatusChanged(
+        string oldStatus,
+        string newStatus)
+    {
+        StatusChanged?.Invoke(
             this,
-            new OrderCreatedEventArgs
+            new OrderStatusChangedEventArgs
             {
-                Order = order
+                OrderId = Id,
+                OldStatus = oldStatus,
+                NewStatus = newStatus
             });
     }
 }
 ```
-```diff
-@@ Buradaki: @@
-```
-```c#
-OrderCreated?.Invoke(...)
-```
-```diff
-@@ olayı yayınlar. @@
+
+The important part is:
+
+```csharp
+public event EventHandler<OrderStatusChangedEventArgs>? StatusChanged;
 ```
 
-```diff
-@@ Subscriber sınıfları @@
+This event defines the contract that subscribers must follow.
+
+---
+
+# 12. EventHandler<T>
+
+`EventHandler<T>` is a delegate.
+
+Conceptually, it looks like this:
+
+```csharp
+public delegate void EventHandler<TEventArgs>(
+    object? sender,
+    TEventArgs e);
 ```
-```c#
-public sealed class EmailNotificationHandler
+
+Therefore:
+
+```csharp
+EventHandler<OrderStatusChangedEventArgs>
+```
+
+expects methods with this shape:
+
+```csharp
+void SomeMethod(
+    object? sender,
+    OrderStatusChangedEventArgs e)
+```
+
+For example:
+
+```csharp
+public void OnStatusChanged(
+    object? sender,
+    OrderStatusChangedEventArgs e)
 {
-    public void Handle(
+}
+```
+
+The method name does not matter.
+
+The **method signature** must be compatible with the delegate.
+
+---
+
+# 13. Email Subscriber
+
+```csharp
+public class EmailOrderObserver
+{
+    public void OnStatusChanged(
         object? sender,
-        OrderCreatedEventArgs eventArgs)
+        OrderStatusChangedEventArgs e)
     {
         Console.WriteLine(
-            $"E-posta gönderildi: " +
-            $"{eventArgs.Order.CustomerEmail}");
+            $"EMAIL -> Order {e.OrderId}: " +
+            $"{e.OldStatus} -> {e.NewStatus}");
     }
 }
 ```
-```c#
-public sealed class StockHandler
+
+---
+
+# 14. Analytics Subscriber
+
+```csharp
+public class AnalyticsOrderObserver
 {
-    public void Handle(
+    public void OnStatusChanged(
         object? sender,
-        OrderCreatedEventArgs eventArgs)
+        OrderStatusChangedEventArgs e)
     {
         Console.WriteLine(
-            $"Stok azaltıldı. OrderId: " +
-            $"{eventArgs.Order.Id}");
+            $"ANALYTICS -> Order {e.OrderId} changed to {e.NewStatus}");
     }
 }
 ```
-```diff
-@@ Abone olma @@
+
+---
+
+# 15. Subscribing to an Event
+
+```csharp
+var order = new Order(123);
+
+var emailObserver = new EmailOrderObserver();
+var analyticsObserver = new AnalyticsOrderObserver();
+
+order.StatusChanged += emailObserver.OnStatusChanged;
+order.StatusChanged += analyticsObserver.OnStatusChanged;
 ```
-```c#
-var orderService = new OrderService();
 
-var emailHandler = new EmailNotificationHandler();
-var stockHandler = new StockHandler();
+The `+=` operator subscribes a handler to the event.
 
-orderService.OrderCreated += emailHandler.Handle;
-orderService.OrderCreated += stockHandler.Handle;
+Now:
 
-orderService.CreateOrder(
-    new Order
+```csharp
+order.ChangeStatus("Paid");
+```
+
+produces:
+
+```text
+EMAIL -> Order 123: Pending -> Paid
+ANALYTICS -> Order 123 changed to Paid
+```
+
+Then:
+
+```csharp
+order.ChangeStatus("Shipped");
+```
+
+produces:
+
+```text
+EMAIL -> Order 123: Paid -> Shipped
+ANALYTICS -> Order 123 changed to Shipped
+```
+
+---
+
+# 16. Unsubscribing from an Event
+
+```csharp
+order.StatusChanged -= emailObserver.OnStatusChanged;
+```
+
+This is equivalent to `Detach` in the manual Observer implementation.
+
+The email subscriber will no longer receive future notifications.
+
+---
+
+# 17. Classic Observer vs C# Events
+
+The relationship is very similar:
+
+| Classic Observer | C# Events |
+|---|---|
+| `Attach(observer)` | `event += handler` |
+| `Detach(observer)` | `event -= handler` |
+| `Notify()` | `event?.Invoke(...)` |
+| `IObserver.Update()` | Event handler method |
+| `List<IObserver>` | Delegate invocation list |
+
+Conceptually:
+
+```text
+Classic Observer
+
+Subject
+   |
+   +--- Attach
+   +--- Detach
+   +--- Notify
+            |
+            +---- Observer A
+            +---- Observer B
+            +---- Observer C
+```
+
+With C#:
+
+```text
+Publisher
+   |
+   +--- event
+          |
+          +---- Handler A
+          +---- Handler B
+          +---- Handler C
+```
+
+The same one-to-many notification idea remains.
+
+---
+
+# 18. What Does `Invoke` Do?
+
+Consider:
+
+```csharp
+order.StatusChanged += emailObserver.OnStatusChanged;
+order.StatusChanged += analyticsObserver.OnStatusChanged;
+```
+
+Later:
+
+```csharp
+StatusChanged?.Invoke(this, eventArgs);
+```
+
+Conceptually, this results in:
+
+```csharp
+emailObserver.OnStatusChanged(this, eventArgs);
+
+analyticsObserver.OnStatusChanged(this, eventArgs);
+```
+
+The event internally maintains an invocation list containing all subscribed handlers.
+
+---
+
+# 19. What Is `sender`?
+
+When an event is raised:
+
+```csharp
+StatusChanged?.Invoke(this, eventArgs);
+```
+
+the first argument becomes:
+
+```csharp
+object? sender
+```
+
+inside the subscriber.
+
+```text
+Invoke(this, eventArgs)
+       |       |
+       |       +----> e
+       |
+       +------------> sender
+```
+
+A subscriber can therefore identify the object that raised the event.
+
+```csharp
+public void OnStatusChanged(
+    object? sender,
+    OrderStatusChangedEventArgs e)
+{
+    if (sender is Order order)
     {
-        Id = 1001,
-        CustomerEmail = "ali@example.com",
-        TotalAmount = 2_000m
-    });
+        Console.WriteLine(
+            $"Order instance {order.Id} raised the event.");
+    }
+}
 ```
 
-```diff
-@@ Abonelik kaldırma: @@
+---
+
+# 20. Lambda Subscribers
+
+A dedicated observer class is not always required.
+
+We can subscribe using a lambda:
+
+```csharp
+order.StatusChanged += (_, e) =>
+{
+    Console.WriteLine(
+        $"Dashboard -> Order {e.OrderId}: {e.NewStatus}");
+};
 ```
 
-__________________________________________
+This is useful for small handlers.
 
+For larger responsibilities, separate classes are usually easier to test and maintain.
 
+---
 
-```diff
-@@ ASP.NET Core örneği: Domain Event @@
+# 21. Why Observer Improves the Design
 
-ASP.NET Core uygulamalarında Observer mantığı çoğu zaman domain event veya notification handler üzerinden uygulanır.
+Without Observer:
 
-Örneğin sipariş oluşturulunca:
+```text
+Order
+ |
+ +--- EmailService
+ +--- SmsService
+ +--- AnalyticsService
+ +--- AuditService
+ +--- NotificationService
 ```
 
-```c#
+The publisher knows all dependent components.
+
+With Observer:
+
+```text
+              Order
+                |
+          StatusChanged
+                |
+     +----------+----------+
+     |          |          |
+    Email    Analytics    Audit
+```
+
+`Order` only publishes the change.
+
+The interested components decide whether they want to subscribe.
+
+This provides **looser coupling**.
+
+---
+
+# 22. Open/Closed Principle
+
+Observer also works well with the **Open/Closed Principle**.
+
+Suppose we want to introduce:
+
+```csharp
+SlackOrderObserver
+```
+
+We can simply subscribe it:
+
+```csharp
+order.StatusChanged += slackObserver.OnStatusChanged;
+```
+
+The `Order` class does not need to change.
+
+The system can be extended with new reactions without modifying the publisher.
+
+---
+
+# 23. Push vs Pull Models
+
+Observer implementations commonly use two approaches.
+
+## Push Model
+
+The subject sends the required information directly.
+
+```csharp
+observer.Update(
+    oldStock,
+    newStock);
+```
+
+The observer receives everything it needs.
+
+---
+
+## Pull Model
+
+The subject sends itself or a reference to itself.
+
+```csharp
+observer.Update(this);
+```
+
+The observer retrieves the information it needs.
+
+```csharp
+public void Update(ProductStock product)
+{
+    Console.WriteLine(product.Stock);
+}
+```
+
+Both approaches are valid.
+
+The choice depends on how much information observers need and how strongly they should depend on the subject.
+
+---
+
+# 24. Real-World Examples
+
+Observer appears in many systems.
+
+## Product Availability
+
+```text
+Product Back In Stock
+        |
+        +---- Email customer
+        +---- Send push notification
+        +---- Update dashboard
+```
+
+## Order Status
+
+```text
+Order Shipped
+     |
+     +---- Notify customer
+     +---- Track analytics
+     +---- Update UI
+```
+
+## ATM Transaction
+
+```text
+Transaction Status Changed
+          |
+          +---- UI
+          +---- Logger
+          +---- Monitoring
+          +---- Receipt Service
+```
+
+## Stock Market
+
+```text
+Price Changed
+     |
+     +---- Trader Dashboard
+     +---- Alert Service
+     +---- Mobile Application
+```
+
+## Weather Station
+
+```text
+Temperature Changed
+          |
+          +---- Mobile Display
+          +---- Web Dashboard
+          +---- Alert System
+```
+
+---
+
+# 25. Observer and UI Applications
+
+UI frameworks heavily rely on event-based communication.
+
+For example:
+
+```csharp
+button.Click += Button_Click;
+```
+
+The button acts as the publisher.
+
+The handler acts as the subscriber.
+
+```text
+Button
+   |
+ Click Event
+   |
+   +---- Button_Click
+```
+
+This follows the same general Observer idea.
+
+---
+
+# 26. Observer and Domain Events
+
+The same idea appears in domain-driven applications.
+
+For example:
+
+```text
+Order Created
+      |
+      +---- Send Email
+      +---- Reserve Stock
+      +---- Create Invoice
+      +---- Add Loyalty Points
+```
+
+The order creation logic should not necessarily contain all these secondary responsibilities.
+
+Instead, it can publish an event:
+
+```csharp
 public sealed record OrderCreatedEvent(
     int OrderId,
     string CustomerEmail,
     decimal TotalAmount);
 ```
-```diff
-@@ Handler interface: @@
+
+Multiple handlers may react independently.
+
+```text
+OrderCreatedEvent
+       |
+       +---- SendOrderEmailHandler
+       +---- ReserveStockHandler
+       +---- CreateInvoiceHandler
 ```
 
-```c#
-public interface IDomainEventHandler<in TEvent>
-{
-    Task HandleAsync(
-        TEvent domainEvent,
-        CancellationToken cancellationToken);
-}
-```
-```diff
-@@ Email handler: @@
-```
+This is conceptually related to Observer, although application-level domain event implementations may introduce additional infrastructure and design decisions.
 
-```c#
-public sealed class SendOrderEmailHandler
-    : IDomainEventHandler<OrderCreatedEvent>
-{
-    public Task HandleAsync(
-        OrderCreatedEvent domainEvent,
-        CancellationToken cancellationToken)
-    {
-        Console.WriteLine(
-            $"E-posta gönderildi: " +
-            $"{domainEvent.CustomerEmail}");
+---
 
-        return Task.CompletedTask;
-    }
-}
-```
-```diff
-@@ Stock handler: @@
-```
+# 27. MediatR Notifications
 
-```c#
-public sealed class ReduceStockHandler
-    : IDomainEventHandler<OrderCreatedEvent>
-{
-    public Task HandleAsync(
-        OrderCreatedEvent domainEvent,
-        CancellationToken cancellationToken)
-    {
-        Console.WriteLine(
-            $"Stok azaltıldı. OrderId: " +
-            $"{domainEvent.OrderId}");
+Libraries such as MediatR also provide one-to-many notification mechanisms.
 
-        return Task.CompletedTask;
-    }
-}
-```
-```diff
-@@ Publisher @@
-```
-
-```c#
-public sealed class DomainEventPublisher
-{
-    private readonly IServiceProvider _serviceProvider;
-
-    public DomainEventPublisher(
-        IServiceProvider serviceProvider)
-    {
-        _serviceProvider = serviceProvider;
-    }
-
-    public async Task PublishAsync<TEvent>(
-        TEvent domainEvent,
-        CancellationToken cancellationToken)
-    {
-        IEnumerable<IDomainEventHandler<TEvent>> handlers =
-            _serviceProvider.GetServices<
-                IDomainEventHandler<TEvent>>();
-
-        foreach (IDomainEventHandler<TEvent> handler in handlers)
-        {
-            await handler.HandleAsync(
-                domainEvent,
-                cancellationToken);
-        }
-    }
-}
-```
-```diff
-@@ DI kayıtları: @@
-```
-
-```c#
-builder.Services.AddScoped<
-    IDomainEventHandler<OrderCreatedEvent>,
-    SendOrderEmailHandler>();
-
-builder.Services.AddScoped<
-    IDomainEventHandler<OrderCreatedEvent>,
-    ReduceStockHandler>();
-
-builder.Services.AddScoped<DomainEventPublisher>();
-```
-```diff
-@@ Order service: @@
-```
-
-```c#
-public sealed class OrderApplicationService
-{
-    private readonly DomainEventPublisher _publisher;
-
-    public OrderApplicationService(
-        DomainEventPublisher publisher)
-    {
-        _publisher = publisher;
-    }
-
-    public async Task CreateOrderAsync(
-        Order order,
-        CancellationToken cancellationToken)
-    {
-        Console.WriteLine(
-            $"Order kaydedildi: {order.Id}");
-
-        var domainEvent = new OrderCreatedEvent(
-            order.Id,
-            order.CustomerEmail,
-            order.TotalAmount);
-
-        await _publisher.PublishAsync(
-            domainEvent,
-            cancellationToken);
-    }
-}
-```
-```diff
-@@ Bu yapıda OrderApplicationService, email ve stock handler’larını doğrudan bilmez. @@
-Sadece event yayınlar.
-```
-__________________________________________
-```diff
-@@ MediatR ile Observer mantığı @@
-Gerçek ASP.NET Core projelerinde MediatR notification yapısı da Observer mantığına benzer.
-Event:
-```
-```c#
+```csharp
 public sealed record OrderCreatedNotification(
     int OrderId,
     string CustomerEmail)
     : INotification;
 ```
-```diff
-@@ Handler 1: @@
-```
 
-```c#
+Multiple handlers can subscribe to the same notification:
+
+```csharp
 public sealed class SendEmailHandler
     : INotificationHandler<OrderCreatedNotification>
 {
@@ -580,19 +986,17 @@ public sealed class SendEmailHandler
         CancellationToken cancellationToken)
     {
         Console.WriteLine(
-            $"E-posta gönderildi: " +
-            $"{notification.CustomerEmail}");
+            $"Email sent to {notification.CustomerEmail}");
 
         return Task.CompletedTask;
     }
 }
 ```
-```diff
-@@ Handler 2: @@
-```
 
-```c#
-public sealed class CreateInvoiceHandler
+Another handler:
+
+```csharp
+public sealed class AnalyticsHandler
     : INotificationHandler<OrderCreatedNotification>
 {
     public Task Handle(
@@ -600,230 +1004,395 @@ public sealed class CreateInvoiceHandler
         CancellationToken cancellationToken)
     {
         Console.WriteLine(
-            $"Fatura oluşturuldu: {notification.OrderId}");
+            $"Analytics recorded for order {notification.OrderId}");
 
         return Task.CompletedTask;
     }
 }
 ```
-```diff
-@@ Yayınlama: @@
-```
 
-```c#
+Publishing:
+
+```csharp
 await mediator.Publish(
     new OrderCreatedNotification(
         order.Id,
         order.CustomerEmail),
     cancellationToken);
 ```
-```diff
-Bir event yayınlanır, birden fazla handler çalışabilir.
 
-Bu yapı Observer Pattern’in modern uygulamalarından biridir.
-```
-__________________________________________
+The conceptual relationship is:
 
-```diff
-@@ Microservice dünyasında Observer @@
-Microservice’lerde publisher ve subscriber çoğu zaman aynı process içinde değildir.
-
-Örneğin:
+```text
+One notification
+       ↓
+Multiple handlers
 ```
 
-```c#
-Order Service
-   ↓
-OrderCreated event
-   ↓
-RabbitMQ / Kafka
-   ↓
-Inventory Service
-Notification Service
-Invoice Service
-Shipping Service
-```
-```diff
-@@ Burada Order Service publisher’dır. @@
+However, MediatR is infrastructure built around mediator/notification abstractions rather than the literal GoF Observer implementation shown earlier.
 
-@@ Diğer servisler subscriber’dır. @@
+---
 
-@@ Bu yapı klasik Observer’ın dağıtık sistem versiyonu gibi düşünülebilir. Fakat message broker kullanıldığı için bazı ek konular gelir: @@
+# 28. Observer vs Pub/Sub
 
-- Eventual consistency
-- Retry
-- Duplicate message
-- Idempotency
-- Outbox Pattern
-- Dead-letter queue
-- Message ordering
+Observer and Publish/Subscribe are related concepts, but they are not exactly the same.
 
-Observer mantığı temel olsa da dağıtık sistemde güvenilir mesajlaşma ayrıca çözülmelidir.
-```
+## Observer
 
-```diff
-@@ React ile ilişkisi @@
+The subject usually holds references to its observers.
 
-React’te state değiştiğinde component’lerin yeniden render edilmesi Observer mantığına benzer.
-
-Örneğin Context Provider bir değer yayınlar:
-```
-
-```c#
-const ThemeContext = createContext("light");
-```
-```diff
-@@ Context kullanan component’ler bu değere abonedir: @@
-```
-
-```c#
-const theme = useContext(ThemeContext);
-```
-```diff
-Provider değeri değiştiğinde subscriber component’ler yeniden render edilir.
-
-Bu birebir klasik GoF implementasyonu değildir ama publisher-subscriber fikri aynıdır.
-```
-
-```c#
-```
-```diff
-@@ Observer ile Pub/Sub farkı @@
-Çok önemli bir farktır.
-
-@@ Observer @@
-Subject, observer referanslarını genelde doğrudan tutar:
-```
-
-```c#
+```text
 Subject
-  ├─ Observer A
-  ├─ Observer B
-  └─ Observer C
-```
-```diff
-Publisher ile subscriber arasında doğrudan veya aynı process içinde ilişki vardır.
-@@ Pub/Sub @@
-Arada broker veya event bus vardır:
+ |
+ +---- Observer A
+ +---- Observer B
+ +---- Observer C
 ```
 
-```c#
+They are typically inside the same process.
+
+---
+
+## Publish/Subscribe
+
+A broker or event bus sits between publisher and subscriber.
+
+```text
 Publisher
-   ↓
+    |
+    v
 Message Broker
+    |
+    +---- Subscriber A
+    +---- Subscriber B
+    +---- Subscriber C
+```
+
+Examples:
+
+```text
+RabbitMQ
+Kafka
+Azure Service Bus
+AWS SNS/SQS
+```
+
+The publisher usually does not know the subscribers.
+
+---
+
+## Important Difference
+
+```text
+Observer
+Publisher --------> Observer
+
+Pub/Sub
+Publisher --------> Broker --------> Subscriber
+```
+
+Pub/Sub introduces distributed-system concerns such as:
+
+- retries
+- eventual consistency
+- duplicate delivery
+- idempotency
+- message ordering
+- dead-letter queues
+- serialization
+- network failures
+- Outbox Pattern
+
+Therefore, a message broker should not simply be treated as the classic GoF Observer Pattern.
+
+It is better to think of Pub/Sub as a related evolution of the same one-to-many notification idea in distributed systems.
+
+---
+
+# 29. Observer vs Mediator
+
+These patterns solve different problems.
+
+## Observer
+
+One publisher notifies many listeners.
+
+```text
+Publisher
+   |
+   +---- Subscriber A
+   +---- Subscriber B
+   +---- Subscriber C
+```
+
+## Mediator
+
+Multiple components communicate through a central mediator.
+
+```text
+Component A
+     |
+     v
+  Mediator
+     |
+     v
+Component B
+```
+
+Observer focuses on **notifications**.
+
+Mediator focuses on **coordinating communication between components**.
+
+---
+
+# 30. Observer vs Decorator
+
+Decorator adds behavior around an object.
+
+```text
+Logging
    ↓
-Subscriber
-```
-```diff
-Publisher subscriber’ları bilmez.
-
-Microservice mimarisinde daha çok Pub/Sub kullanılır.
-
-Kısa fark:
-- Observer → Doğrudan abonelik
-- Pub/Sub  → Broker üzerinden abonelik
+Retry
+   ↓
+PaymentService
 ```
 
-```diff
-@@ Observer ile Mediator farkı @@
-Observer’da bir publisher olayı yayınlar, birden fazla observer dinler.
+Observer reacts to an event.
 
-Mediator’da nesneler birbirleriyle doğrudan konuşmak yerine merkezi mediator üzerinden iletişim kurar.
-Observer:
-Publisher → Birden fazla subscriber
-
-Mediator:
-Component A → Mediator → Component B
-```
-```diff
-@@ Observer ile Decorator farkı @@
-```
-```diff
-Decorator bir nesnenin davranışını sararak genişletir:
-Logging → Retry → Payment
-Observer bir olay olduğunda birden fazla subscriber’ı bilgilendirir:
-OrderCreated
-  ├─ Email
-  ├─ Stock
-  └─ Invoice
-```
-```diff
-@@ Avantajları @@
-✅ Publisher ve subscriber bağımlılığı azalır.
-✅ Yeni subscriber eklemek kolaydır.
-✅ Bir olay birden fazla işlem tetikleyebilir.
-✅ OCP desteklenir.
-✅ Event-driven sistemlerin temelini oluşturur.
-✅ Yan işlemler ana servisten ayrılır.
-
-@@ Dezavantajları @@
-❌ Çalışma sırası belirsizleşebilir.
-❌ Hangi observer’ın çalıştığını takip etmek zorlaşabilir.
-❌ Bir observer hata verirse diğerlerini etkileyebilir.
-❌ Unsubscribe yapılmazsa memory leak oluşabilir.
-❌ Çok fazla event varsa sistemin akışı görünmez hale gelebilir.
-❌ Senkron observer’lar ana işlemi yavaşlatabilir.
+```text
+PaymentCompleted
+       |
+       +---- Email
+       +---- Analytics
+       +---- Audit
 ```
 
-```diff
-@@ Senkron ve asenkron Observer @@
-@@ Senkron @@
-```
+They solve completely different problems.
 
-```c#
+---
+
+# 31. Synchronous Observers
+
+The simplest Observer implementation is synchronous.
+
+```csharp
 foreach (var observer in observers)
 {
     observer.Update(order);
 }
 ```
-```diff
-@@ Bir observer yavaşsa bütün işlem bekler. @@
-@@ Asenkron @@
-```
 
-```c#
+If one observer takes five seconds, the publisher waits five seconds.
+
+Also, if an observer throws an exception, notification of later observers may be interrupted depending on the implementation.
+
+---
+
+# 32. Asynchronous Observers
+
+Observers can also execute asynchronously.
+
+```csharp
 await Task.WhenAll(
     observers.Select(
-        observer => observer.UpdateAsync(
-            order,
-            cancellationToken)));
+        observer =>
+            observer.UpdateAsync(
+                order,
+                cancellationToken)));
 ```
 
-```diff
-Ancak paralel çalıştırmada:
+This may improve throughput but introduces additional concerns:
 
-Thread safety
-Hata yönetimi
-Transaction bütünlüğü
-Sıralama
+- thread safety
+- exception handling
+- cancellation
+- ordering
+- transaction boundaries
+- concurrent state changes
 
-konularına dikkat edilmelidir.
+Asynchronous execution should therefore be an intentional design decision rather than an automatic optimization.
 
-- Ne zaman kullanılır?
+---
 
-Observer şu durumlarda uygundur:
+# 33. Advantages
 
-Bir değişiklik birden fazla tarafı ilgilendiriyorsa
-Publisher subscriber’ları doğrudan bilmemeliyse
-Event-driven yapı kuruluyorsa
-UI güncellemeleri yapılacaksa
-Domain event kullanılacaksa
-Notification sistemi kurulacaksa
+The Observer Pattern provides several benefits:
 
-- Ne zaman kullanılmamalı?
+- Loose coupling between publisher and subscribers
+- One-to-many communication
+- Dynamic subscription and unsubscription
+- Easy addition of new observers
+- Better separation of responsibilities
+- Good support for the Open/Closed Principle
+- Natural fit for event-driven behavior
 
-Yalnızca tek ve zorunlu bir işlem varsa
-İşlem sırası kesin ve transaction içinde olmalıysa
-Hata durumunda bütün işlemler birlikte rollback edilmeli ise
-Event zinciri sistemi gereksiz karmaşıklaştırıyorsa
+---
 
-Örneğin bakiye düşme ve muhasebe kaydı aynı transaction içinde kesinlikle birlikte yapılmalıysa bunları gevşek observer’lara bırakmak riskli olabilir.
+# 34. Disadvantages
 
-Mülakat cevabı
+Observer also has trade-offs:
 
-Observer Pattern, bir subject’in durumunda değişiklik olduğunda ona abone olan observer’ların otomatik olarak bilgilendirilmesini sağlar. Publisher subscriber’ların concrete implementasyonlarını bilmez. C#’ta event/delegate, ASP.NET Core’da domain event veya MediatR notification, microservice sistemlerinde ise message broker tabanlı Pub/Sub yapıları bu yaklaşıma örnek verilebilir.
+- Program flow can become harder to follow
+- Notification order may matter unexpectedly
+- Slow observers can delay synchronous publishers
+- Exceptions in observers require careful handling
+- Forgotten subscriptions may cause memory leaks
+- Too many events can make the system difficult to understand
+- Circular event chains can create unexpected behavior
+
+---
+
+# 35. Memory Leaks and Events
+
+C# events create a reference from the publisher to the subscriber.
+
+If a long-lived publisher contains a subscription to a short-lived subscriber, the subscriber may remain alive longer than expected.
+
+For this reason:
+
+```csharp
+publisher.Event += subscriber.Handler;
 ```
-Kısa özeti:
 
-Bir olay olur → Birden fazla abone haberdar edilir.
+may eventually require:
+
+```csharp
+publisher.Event -= subscriber.Handler;
 ```
+
+depending on the lifetime of both objects.
+
+Subscription lifetime is an important consideration in event-driven applications.
+
+---
+
+# 36. When Should We Use Observer?
+
+Observer is a good choice when:
+
+- one change should notify multiple components
+- subscribers are not known in advance
+- subscribers may be added or removed dynamically
+- the publisher should not know concrete subscribers
+- event-based communication naturally fits the domain
+- UI elements need to react to state changes
+- multiple independent reactions follow the same event
+
+---
+
+# 37. When Should We Avoid Observer?
+
+Observer may not be appropriate when:
+
+- there is only one mandatory operation
+- execution order must be strictly controlled
+- all operations must participate in the same transaction
+- failures must cause all operations to roll back together
+- events would make a simple workflow unnecessarily difficult to understand
+
+For example:
+
+```text
+Withdraw Money
+     |
+     +---- Decrease Balance
+     +---- Create Accounting Entry
+```
+
+If both actions must succeed or fail together inside the same transaction, separating them into loosely coordinated observers may be dangerous.
+
+Observer should improve separation of concerns, not hide important business dependencies.
+
+---
+
+# 38. Mental Model
+
+The easiest way to remember the pattern is:
+
+```text
+        Something changes
+               |
+               v
+            Subject
+               |
+            Notify
+               |
+     +---------+---------+
+     |         |         |
+     v         v         v
+ Observer   Observer   Observer
+```
+
+Or simply:
+
+> **One event occurs, multiple interested parties react.**
+
+---
+
+# 39. Classic Observer vs Event-Based Observer
+
+## Classic
+
+```csharp
+subject.Attach(observer);
+
+subject.Notify();
+
+subject.Detach(observer);
+```
+
+## C#
+
+```csharp
+publisher.StatusChanged += observer.OnStatusChanged;
+
+publisher.StatusChanged?.Invoke(this, eventArgs);
+
+publisher.StatusChanged -= observer.OnStatusChanged;
+```
+
+Same fundamental idea, different implementation mechanism.
+
+---
+
+# 40. Interview Answer
+
+A concise explanation:
+
+> The Observer Pattern is a behavioral design pattern that defines a one-to-many relationship between objects. When the state of the subject changes, all subscribed observers are automatically notified. It reduces coupling because the publisher does not need to know the concrete implementations of its subscribers. In C#, the pattern is naturally represented with delegates and events using `+=`, `-=`, and `Invoke`.
+
+A slightly more advanced answer:
+
+> The classic implementation maintains a collection of observers and exposes subscribe, unsubscribe, and notify operations. C# events provide language-level support for a similar mechanism. Observer is also conceptually related to domain events and event-driven architectures, although distributed Pub/Sub systems introduce brokers, network boundaries, delivery guarantees, retries, idempotency, and other concerns that are outside the classic GoF pattern.
+
+---
+
+# 41. Key Takeaway
+
+The Observer Pattern is not primarily about sending emails, updating dashboards, or raising events.
+
+It is about removing this dependency:
+
+```text
+Publisher
+   |
+   +---- knows Observer A
+   +---- knows Observer B
+   +---- knows Observer C
+```
+
+and moving toward:
+
+```text
+Publisher
+   |
+   +---- publishes a change
+              |
+              +---- interested subscribers react
+```
+
+The publisher focuses on **what happened**.
+
+Observers decide **how they react to it**.
+
+That separation is the real value of the Observer Pattern.
